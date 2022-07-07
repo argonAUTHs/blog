@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      Stats Whisper, the stats gatherer &middot; 
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/bootstrap.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" sizes="144x144" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/atom+xml" title="" href="/atom.xml">
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home" class='logo'></a>
+          <nav class="pull toggle-content">
+            <ul class="top-nav">
+              
+              <li><h2><a href="/archive">Archive</a></h2></li>
+              
+              <li><h2><a href="/atom.xml">Feed</a></h2></li>
+              
+            </ul>
+          </nav>
+          <div class="text-right navicon">
+            <a id="nav-toggle" class="nav_slide_button" href="#"><span></span></a>
+          </div>
+        </h3>
+      </header>
+
+      <main>
+        
+<p>
+<i class="glyphicon glyphicon-tags" style="padding-right: .5rem;"></i>
+
+<a href="/tag/DevOps" title="View posts tagged with &quot;DevOps&quot;"><u>DevOps</u></a>, 
+
+<a href="/tag/Monitoring" title="View posts tagged with &quot;Monitoring&quot;"><u>Monitoring</u></a>, 
+
+<a href="/tag/StatsD" title="View posts tagged with &quot;StatsD&quot;"><u>StatsD</u></a>, 
+
+<a href="/tag/Stats Whisper" title="View posts tagged with &quot;Stats Whisper&quot;"><u>Stats Whisper</u></a>
+
+</p>
+
+
+<article class="post">
+  <h1 class="post-title">Stats Whisper, the stats gatherer</h1>
+  <time datetime="2016-01-27T19:50:40+00:00" class="post-date">27 Jan 2016</time>
+  
+  <p></p>
+  
+  <p>A few months ago I needed a simple tool that would gather certain app stats and integrate with our Rails apps easily. The underlying requirements were:</p>
+
+<ul>
+  <li>collect visits counter and/or response time of given part of app;</li>
+  <li>measure only certain (the most interesting) parts of app, e.g. concrete component or path, because the overall stats view is easily affordable with Google Analytics so additional toolset (collector, storage and visualization) sounds like an overhead.</li>
+</ul>
+
+<h2 id="meet-stats-whisper">Meet Stats Whisper</h2>
+
+<p>So I’ve created the <a href="https://github.com/Opensoftware/stats_whisper">Stats Whisper</a>, a simple data gatherer for <a href="https://github.com/etsy/statsd">StatsD</a>. StatsD, because of <a href="https://github.com/etsy/statsd/blob/master/docs/metric_types.md#counting">counters</a> and <a href="https://github.com/etsy/statsd/blob/master/docs/metric_types.md#timing">timers</a> data types, support for UDP packets and Graphite integration – we’re using it internally as data storage.</p>
+
+<p>From Rails perspective, <a href="https://github.com/Opensoftware/stats_whisper">Stats Whisper</a> is a middleware, which interacts with each request and gather data according to <code class="language-plaintext highlighter-rouge">whisper_config.yml</code> config file. Currently it can only provide a whitelist of which requests – or parts of app – have to be measured (time of execution in ms and counters for each route). The whitelist consists of regular expressions, e.g: <code class="language-plaintext highlighter-rouge">^/dashboard</code>, matching only interesting requests. The message is being sent to StatsD (via UDP port) immediately once the request is completed.</p>
+
+<p>It is essential to understand that the purpose of this library is to focus only on requests defined within <em>whitelist</em>. All the remaining are skipped, because it aims to measure only the most interesting parts of app, e.g. a concrete component – lets say user dashboard, product, a set of products or whatever is important to unleash the business value. Generally speaking, it’s up to the end user, what to measure and why.</p>
+
+<p>The Stats Whisper library is not the only one on the market. I’m familiar with:</p>
+
+<ul>
+  <li><a href="https://github.com/Shopify/statsd-instrument/"><code class="language-plaintext highlighter-rouge">statsd-instrument</code></a>, that can measure any app method execution time or count the amount of method invocation so it works even closer to the app than Stats Whisper;</li>
+  <li><a href="https://github.com/scoutapp/scout_statsd_rack"><code class="language-plaintext highlighter-rouge">scout_statsd_rack</code></a> which measures execution time and count of requests of any app path – it’s not possible to specify only certain paths.</li>
+</ul>
+
+<h2 id="a-word-about-stats-gathering">A word about stats gathering</h2>
+
+<p>The aim of such measurements is to find anomalies that prevent the business from normal work. It is important to understand, what to measure and why. Start with critical components of your app, consider which parts might be the most important for the end user. The <a href="https://github.com/Opensoftware/stats_whisper">Stats Whisper</a> library will help you gather appropriate statistics and identify bottlenecks. As an example, consider the chart shown below:</p>
+
+<p><a href="/static/img/20160119/chart.png"><img src="/static/img/20160119/chart.png" alt="" /></a></p>
+
+<h4 id="understand-the-noise">Understand the noise</h4>
+
+<p>“In average” (these quotes are on purpose) the response time is about 100ms per request, however sometimes it’s even order of magnitude bigger than the average. I’ve looked around and found that these peaks occur when user performs some search action, what was the bottleneck in this case.</p>
+
+<p>Regarding quoted average phrase, note how StatsD computes its statistics values, especially <a href="https://github.com/etsy/statsd/blob/master/docs/metric_types.md#timing">timing</a> data type. Be careful with these params, because they may get you inaccurate results. I mean they’re completely solid, but consider what <a href="http://devblog.mediamath.com/why-you-should-not-rely-on-statsd-for-monitoring-or-optimizing-response-time"><em>mean</em> or <em>max</em> offer</a> and how these may change your point of view.</p>
+
+<h4 id="see-interactions-at-peak-performance">See interactions at peak performance</h4>
+
+<p>Another useful part of app statistics data analysis is the ability to unveil peak performance periods and how they interact e.g. with crucial components of the system while such events occur. See the chart shown below:</p>
+
+<p><a href="/static/img/20160119/chart2.png"><img src="/static/img/20160119/chart2.png" alt="" /></a></p>
+
+<p>This is the real data gathered during students enrollments for elective courses. The enrollments started at 8 a.m. where the highest peak can be observed. Each student request response time has been measured and sent to StatsD counter and timer objects. The results are shown on first and second row. It’s worth noting that despite the peak performance, the upper (max value) of StatsD timer didn’t grew vast for main page and dashboard. I’ve also attached the CPU load avg to this chart to show it’s quite useless measurement, because note that it almost completely does not reflect the peak traffic – it does not tell you nothing about what is hapenning.</p>
+
+
+</article>
+
+<aside class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+    <li>
+      <h3>
+        <a href="/2016/11/07/interface-designer-manifesto/">
+          Software Interface Designer Manifesto
+          <small><time datetime="2016-11-07T21:38:32+00:00">07 Nov 2016</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2016/01/14/devops-in-small-companies-part-ii-entering-automation/">
+          DevOps in small companies – part II – entering automation
+          <small><time datetime="2016-01-14T16:24:53+00:00">14 Jan 2016</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2015/11/30/first-solution-isnt-always-the-smartest-a-few-thoughts-about-using-ansible/">
+          First solution isn't always the smartest – a few thoughts about using Ansible
+          <small><time datetime="2015-11-30T11:23:14+00:00">30 Nov 2015</time></small>
+        </a>
+      </h3>
+    </li>
+    
+  </ul>
+</aside>
+
+
+
+<!-- Add Disqus comments. -->
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'opensoftwareblog';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+      </main>
+
+      <footer class="footer">
+        <small>
+          OpenSoftware <time datetime="2022-07-07T21:28:21+00:00">2022</time>. CC BY-NC-SA 3.0.
+        </small>
+      </footer>
+    </div>
+    <script>
+      var show = function (elem) {
+        elem.classList.add('is-visible');
+      };
+
+      // Hide an element
+      var hide = function (elem) {
+        elem.classList.remove('is-visible');
+      };
+
+      // Toggle element visibility
+      var toggle = function (elem) {
+        elem.classList.toggle('is-visible');
+      };
+
+      document.querySelector("#nav-toggle").addEventListener("click", function(event) {
+        var content = document.querySelector(".pull");
+        if (!content) return;
+
+        toggle(content);
+      });
+
+    </script>
+  </body>
+</html>

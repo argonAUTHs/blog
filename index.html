@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+       
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/bootstrap.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" sizes="144x144" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/atom+xml" title="" href="/atom.xml">
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home" class='logo'></a>
+          <nav class="pull toggle-content">
+            <ul class="top-nav">
+              
+              <li><h2><a href="/archive">Archive</a></h2></li>
+              
+              <li><h2><a href="/atom.xml">Feed</a></h2></li>
+              
+            </ul>
+          </nav>
+          <div class="text-right navicon">
+            <a id="nav-toggle" class="nav_slide_button" href="#"><span></span></a>
+          </div>
+        </h3>
+      </header>
+
+      <main>
+        <div class="posts">
+  
+  <article class="post">
+    <h1 class="post-title">
+      <a href="/2016/11/07/interface-designer-manifesto/">
+        Software Interface Designer Manifesto
+      </a>
+    </h1>
+
+    <time datetime="2016-11-07T21:38:32+00:00" class="post-date">07 Nov 2016</time>
+    
+    <p class="post-author">
+    by
+    
+    Michal Pietrus
+    
+    </p>
+    
+
+    <ol>
+  <li>
+    <p>A program without interface is just machine code. Machines understand everything tailored to language rules. They don’t care about interfaces, but humans do. <em>Interfaces are for humans</em>.</p>
+  </li>
+  <li>
+    <p>Interfaces are read many times more than are written. The weaker an interface is, the more diffcult it is to understand its intention. <em>Respect other humans</em>.</p>
+  </li>
+  <li>
+    <p>Various tools, patterns and techniques may be utilised to create interface, but only human can blend it together with appropriate proportions. <em>That is a good interface</em>.</p>
+  </li>
+  <li>
+    <p>Interface designer doesn’t start on 09:00 am and stops 05:00 pm. Creative work is not a machine with on/off button. When the conditions are good, good interface will appear in 2 hours. When conditions are bad, 2 days may be insufficient to create a good one. Don’t push on it.</p>
+  </li>
+  <li>
+    <p>Creating interfaces, despite its science nature, is an art. Therefore may be described as beautiful or awful, good or bad, strong or weak or whatever adjective is suitable. Judging interfaces requires both, wisdom and experience.</p>
+  </li>
+  <li>
+    <p>SOLID, TDD, DRY, CLEAN: they exist for a reason. <em>Mantaining good interfaces is a pleasure</em>. Otherwise there’s always WTF.</p>
+  </li>
+</ol>
+
+  </article>
+  
+  <article class="post">
+    <h1 class="post-title">
+      <a href="/2016/01/27/meet-stats-whisper-the-stats-gatherer/">
+        Stats Whisper, the stats gatherer
+      </a>
+    </h1>
+
+    <time datetime="2016-01-27T19:50:40+00:00" class="post-date">27 Jan 2016</time>
+    
+    <p></p>
+    
+
+    <p>A few months ago I needed a simple tool that would gather certain app stats and integrate with our Rails apps easily. The underlying requirements were:</p>
+
+<ul>
+  <li>collect visits counter and/or response time of given part of app;</li>
+  <li>measure only certain (the most interesting) parts of app, e.g. concrete component or path, because the overall stats view is easily affordable with Google Analytics so additional toolset (collector, storage and visualization) sounds like an overhead.</li>
+</ul>
+
+<h2 id="meet-stats-whisper">Meet Stats Whisper</h2>
+
+<p>So I’ve created the <a href="https://github.com/Opensoftware/stats_whisper">Stats Whisper</a>, a simple data gatherer for <a href="https://github.com/etsy/statsd">StatsD</a>. StatsD, because of <a href="https://github.com/etsy/statsd/blob/master/docs/metric_types.md#counting">counters</a> and <a href="https://github.com/etsy/statsd/blob/master/docs/metric_types.md#timing">timers</a> data types, support for UDP packets and Graphite integration – we’re using it internally as data storage.</p>
+
+<p>From Rails perspective, <a href="https://github.com/Opensoftware/stats_whisper">Stats Whisper</a> is a middleware, which interacts with each request and gather data according to <code class="language-plaintext highlighter-rouge">whisper_config.yml</code> config file. Currently it can only provide a whitelist of which requests – or parts of app – have to be measured (time of execution in ms and counters for each route). The whitelist consists of regular expressions, e.g: <code class="language-plaintext highlighter-rouge">^/dashboard</code>, matching only interesting requests. The message is being sent to StatsD (via UDP port) immediately once the request is completed.</p>
+
+<p>It is essential to understand that the purpose of this library is to focus only on requests defined within <em>whitelist</em>. All the remaining are skipped, because it aims to measure only the most interesting parts of app, e.g. a concrete component – lets say user dashboard, product, a set of products or whatever is important to unleash the business value. Generally speaking, it’s up to the end user, what to measure and why.</p>
+
+<p>The Stats Whisper library is not the only one on the market. I’m familiar with:</p>
+
+<ul>
+  <li><a href="https://github.com/Shopify/statsd-instrument/"><code class="language-plaintext highlighter-rouge">statsd-instrument</code></a>, that can measure any app method execution time or count the amount of method invocation so it works even closer to the app than Stats Whisper;</li>
+  <li><a href="https://github.com/scoutapp/scout_statsd_rack"><code class="language-plaintext highlighter-rouge">scout_statsd_rack</code></a> which measures execution time and count of requests of any app path – it’s not possible to specify only certain paths.</li>
+</ul>
+
+<h2 id="a-word-about-stats-gathering">A word about stats gathering</h2>
+
+<p>The aim of such measurements is to find anomalies that prevent the business from normal work. It is important to understand, what to measure and why. Start with critical components of your app, consider which parts might be the most important for the end user. The <a href="https://github.com/Opensoftware/stats_whisper">Stats Whisper</a> library will help you gather appropriate statistics and identify bottlenecks. As an example, consider the chart shown below:</p>
+
+<p><a href="/static/img/20160119/chart.png"><img src="/static/img/20160119/chart.png" alt="" /></a></p>
+
+<h4 id="understand-the-noise">Understand the noise</h4>
+
+<p>“In average” (these quotes are on purpose) the response time is about 100ms per request, however sometimes it’s even order of magnitude bigger than the average. I’ve looked around and found that these peaks occur when user performs some search action, what was the bottleneck in this case.</p>
+
+<p>Regarding quoted average phrase, note how StatsD computes its statistics values, especially <a href="https://github.com/etsy/statsd/blob/master/docs/metric_types.md#timing">timing</a> data type. Be careful with these params, because they may get you inaccurate results. I mean they’re completely solid, but consider what <a href="http://devblog.mediamath.com/why-you-should-not-rely-on-statsd-for-monitoring-or-optimizing-response-time"><em>mean</em> or <em>max</em> offer</a> and how these may change your point of view.</p>
+
+<h4 id="see-interactions-at-peak-performance">See interactions at peak performance</h4>
+
+<p>Another useful part of app statistics data analysis is the ability to unveil peak performance periods and how they interact e.g. with crucial components of the system while such events occur. See the chart shown below:</p>
+
+<p><a href="/static/img/20160119/chart2.png"><img src="/static/img/20160119/chart2.png" alt="" /></a></p>
+
+<p>This is the real data gathered during students enrollments for elective courses. The enrollments started at 8 a.m. where the highest peak can be observed. Each student request response time has been measured and sent to StatsD counter and timer objects. The results are shown on first and second row. It’s worth noting that despite the peak performance, the upper (max value) of StatsD timer didn’t grew vast for main page and dashboard. I’ve also attached the CPU load avg to this chart to show it’s quite useless measurement, because note that it almost completely does not reflect the peak traffic – it does not tell you nothing about what is hapenning.</p>
+
+
+  </article>
+  
+  <article class="post">
+    <h1 class="post-title">
+      <a href="/2016/01/14/devops-in-small-companies-part-ii-entering-automation/">
+        DevOps in small companies – part II – entering automation
+      </a>
+    </h1>
+
+    <time datetime="2016-01-14T16:24:53+00:00" class="post-date">14 Jan 2016</time>
+    
+    <p></p>
+    
+
+    <p>A few months ago I’ve written <a href="/2015/09/11/devops-in-small-companies-part-i/">first post</a> in this series and it seems it’s time to continue the discussion, because things didn’t stop. Not at all.</p>
+
+<p>The investment in configuration, or to be more specific, in automating things isn’t free. It depends on many factors, obviously, and here it was a compromise between <em>what needs to be done</em> and <em>what could be done</em>. In our case automation, configuration management (CM) or whatever in between was the second one. The world wouldn’t end while not having CM solutions on board. Especially here, where we don’t manage a farm of VM’s in a cloud environment and to be honest, where any action could be done <em>manually</em>.</p>
+
+<h3 id="even-though-you-manage-even-one-simple-vm-id-automate-this">Even though you manage even one simple VM, I’d automate this</h3>
+
+<p>During last months we’ve done a lot in case of automation. We’ve also learned a lot, I mean not only the new tools, but the two–words I’d call ‘good practices’ in case of the overall environment management. We manage about 10 VM’s so it’s not much and these are in private University cluster. We’re not clouded with all of its pros and cons, but we try (or apply eventually) some cloud–solutions, e.g. we really value the cattle vs. kittens paradigm (covered in <a href="/2015/09/11/devops-in-small-companies-part-i/#the-kittens-world">first blog post</a> of this series).</p>
+
+<p>Although we don’t manage big clusters or clouds, we managed some good practices that apply in any environment. We believe that:</p>
+
+<ol>
+  <li>Any taken action closer to automation makes your environments less error–prone. It’s insanely important in any environment, whether you have a huge cluster or a single VM, because tools works fine until someone touches it, right? If so, don’t let anyone touch anything directly, automate it.</li>
+  <li>Any part of automated configuration is recreatable, repeatable, and so it’s testable! You can test whatever you want in a way however you want to before putting it into production environment.</li>
+  <li>Any part of automated configuration can be reused and applied within any other environment. These are so–called roles and you can re–use them for any environment you’d like to provision.</li>
+  <li>Automation standarizes your environment, either a huge cluster or a single VM. It encourages you or any other person in the team to do things in a specific way, so any other person after any period of time can handle this. Whether edit some config of important tool or just add another package to the system, it all lies in one place.</li>
+</ol>
+
+<h3 id="automating-things-isnt-free">Automating things isn’t free</h3>
+
+<p>Daily work still needs to be done, because automation isn’t a top priority. Having said that, most of the CM–related work we’ve made during spare time. Week after week another components joined to the “automated WALL·E family”. We’ve used Ansible as the CM–tool and I believe personally it was a good choice, because it simply let us do the job. We’ve also introduced a few tools to achieve simple CI and so we added Jenkins, which integrates with our Gerrit to perform code review so each Ansible change has been tested upon staging environment before merge into master branch. Furthermore, for any master branch merge, Gerrit triggered an event and so Jenkins would run production build. The complete process is shown below:</p>
+
+<p><img src="/static/img/20160114/opensoftware_CI.png" alt="" /></p>
+
+<h3 id="however-running-automated-things-is-so-dont-keep-dinosaurs">However, running automated things, is so don’t keep dinosaurs</h3>
+
+<p>Once you’ve built automated configuration, your environments are no more pets or dinosaurs. They’re easily recreatable and configurable at scale if needed. However, the ‘scale’ word is not necessary here at all. Even having just a single VM, e.g. company developer tools VM, would be a good practice to <a href="/2015/09/11/devops-in-small-companies-part-i/#where-shall-i-start">clean it up</a> and automate, because such VM’s become dinosaurs fast. Once the toolset has been installed, it’s better to not touch it at all, because who would ever remember why they’re exist in a such way.</p>
+
+<p>To give certain examples, we’ve entered automated configuration world and gather profits from:</p>
+
+<ul>
+  <li>Standarization, where these old dinosaur–like VM’s again became manageable.</li>
+  <li>Changes testability, where each change can be tested before putting into prodution environment.</li>
+  <li>Recreatable environments, so we can forget about VM major system upgrade and instead create exactly the same VM, but with newer environment version – this is so–called zero downtime migration.</li>
+  <li>Monitoring things. It’s a shame to say that, but we weren’t monitor our services until that time. It’s quite interesting what metrics could tell you about particular service or the whole system. I mean, among other things, counting or measuring requests response time for certain views (actually it’s a topic for another blog post).</li>
+  <li>…each other, because all these configs, packages and other manageable things lie in one place and so anyone can enter the repository and see how exactly that thing has been performed or installed. It’s all way more transparent.</li>
+</ul>
+
+<p>Don’t feel ashamed and start automating things today.</p>
+
+
+  </article>
+  
+  <article class="post">
+    <h1 class="post-title">
+      <a href="/2015/11/30/first-solution-isnt-always-the-smartest-a-few-thoughts-about-using-ansible/">
+        First solution isn't always the smartest – a few thoughts about using Ansible
+      </a>
+    </h1>
+
+    <time datetime="2015-11-30T11:23:14+00:00" class="post-date">30 Nov 2015</time>
+    
+    <p></p>
+    
+
+    <p>Basically, this post is a continuation of <a href="2015/10/09/why-we-dont-focus-on-testing-ansible-roles-extensively/">Why we don’t focus on testing Ansible roles extensively</a> and essentially touches <a href="http://www.ansible.com/">Ansible</a> and expands, among other things, a few thoughts about using this tool within a CI environment.</p>
+
+<h2 id="the-problem-execution-time-of-ansible-playbook-takes-too-long">The problem: execution time of Ansible playbook takes too long</h2>
+
+<h4 id="the-context">The context</h4>
+<p>Having a set of VM’s and several roles to execute, I’ve started to think how to shorten the execution time within the cluster.</p>
+
+<h4 id="first-solution--extract-and-execute-only-the-code-thats-been-changed">First solution – extract and execute only the code that’s been changed</h4>
+<p>As we use here a CI for Ansible, the first idea was to execute only the role that’s been changed. It sounds quite reasonable, because only concrete piece of playbook lifecycle is executed, without touching all the rest, unchanged. However, it works smootly until it concerns internal roles.
+Let me explain the current solution for staging environment. What’s executed after a change is being pushed into repository, is distinguished with a piece of Bash script:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">tags</span><span class="o">=</span><span class="sb">`</span>git show <span class="nt">--pretty</span><span class="o">=</span><span class="s2">"format:"</span> <span class="nt">--name-only</span> <span class="nv">$GIT_COMMIT</span> | <span class="nb">grep</span> <span class="nt">-v</span> <span class="s1">'roles/requirements.yml'</span> | <span class="nb">grep</span> <span class="nt">-e</span> <span class="s1">'roles\/'</span> | <span class="nb">awk</span> <span class="nt">-F</span> <span class="s2">"/"</span> <span class="s1">'{print $2}'</span> | <span class="nb">paste</span> <span class="nt">-sd</span> <span class="s2">","</span> -<span class="sb">`</span>
+<span class="k">if</span> <span class="o">!</span> <span class="o">[</span> <span class="nt">-z</span> <span class="s2">"</span><span class="nv">$tags</span><span class="s2">"</span> <span class="o">]</span><span class="p">;</span> <span class="k">then
+  </span><span class="nb">echo</span> <span class="s2">"Running for tags: </span><span class="nv">$tags</span><span class="s2">"</span>
+  ansible-playbook <span class="nt">--tags</span><span class="o">=</span><span class="s2">"</span><span class="nv">$tags</span><span class="s2">"</span> <span class="nt">-i</span> staging_inv site.yml
+<span class="k">else</span>
+  <span class="c"># Execute all stuff</span>
+  ansible-playbook <span class="nt">-i</span> staging_inv site.yml
+<span class="k">fi</span></code></pre></figure>
+
+<p>In particular, it extracts what’s been changed from a Git tree and enforces to run build for concrete tags. These tags match role names, e.g. if any file of role <em>common</em> has been changed, build executes only for role <em>common</em>. Unfortunately, it shines until you add an external role. Given that, lets say the main directory playbook structure looks like:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>tree ./ <span class="nt">-L</span>  1
+├── ansible.cfg
+├── files
+├── group_vars
+├── host_vars
+├── roles
+│   ├── ...
+│   ├── requirements.yml
+├── site.yml
+└── staging_inv</code></pre></figure>
+
+<p>When you add an external role, what you do – in most cases – is extending <em>*vars</em> with some configuration variables related to the role and that’s all. It provides great flexibility for including additional roles, however it also reduces the possibility of extraction only certain roles to execute (based on the piece of code showed above). For such <em>nginx</em> external role example, you’d only need to add some variables related to the role so the above extraction script wouldn’t match any code from within roles directory and hence, peform all tasks defined within a playbook.</p>
+
+<h4 id="second-solution--build-a-wrapper-role">Second solution – build a wrapper role</h4>
+
+<p>Any Ansible role may depend on any other role, where dependent roles are executed first. Role dependencies are given within host role <em>meta/main.yml</em>:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="na">dependencies</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">ansible-role-nginx</span></code></pre></figure>
+
+<p>The host role (one that’s having dependencies) would provide all essential variables for the dependent roles and it plays nicely. Basically, the nginx wrapper role looks like:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>tree ./roles/nginx/ <span class="nt">-L</span> 1
+├── defaults
+├── meta
+├── tasks
+└── vars</code></pre></figure>
+
+<p>where <em>vars</em> provide common variables for <em>ansible-role-nginx</em> role. The <em>common</em> word is on purpose, because what if you’d like to deliver configuration for several nginx instances, where each instance differs slightly (e.g. is having different SSL cert)? The whole wrapper role plan crashes, because it needs to be distinguished somehow what plays where, so the solution would likely to use either <em>group</em> or <em>host_ vars</em>, whereas the extraction script doesn’t know anything about these directories (because they reside within playbook main dir).</p>
+
+<p>However, there’s a light for such approach, I mean using wrapper roles:</p>
+
+<ol>
+  <li><em>nginx</em> role–case is quite unusual. In most cases it will be sufficient to use wrapper role <em>vars</em> and define essential variables there.</li>
+  <li>External role common code has his own isolated environment with the ability to test it, using the above Bash script.</li>
+  <li>Wrapper role may include additional tasks and these are applied right after all dependent roles are applied. However, to apply pre–role tasks, different approach is needed.</li>
+</ol>
+
+<h2 id="the-problem--applying-prerole-tasks-for-certain-role">The problem – applying pre–role tasks for certain role</h2>
+
+<h4 id="the-context-1">The context</h4>
+
+<p>The current design of applying pre or post tasks of certain roles is limited to concrete <a href="http://docs.ansible.com/ansible/playbooks_roles.html#roles">pre/post tasks</a> defined within a playbook. Such approach, however, implies that playbook becomes both, the declaration and definition of roles and tasks, which sounds like a straight way of having a speghetti code.</p>
+
+<h4 id="everything-should-be-roleized">Everything should be roleized</h4>
+
+<p>Because it keeps your code clean and readable, no matter whether it’s a bunch of tasks or just one that creates a directory. Be consistent in what you do and that will cause profits. Instead of adding <em>pre_tasks</em> to your playbook, create another role, e.g. <em>pre-nginx</em> that simply creates cache directory or whatever is needed before role is executed.</p>
+
+<h2 id="the-problem--complex-role-configuration-and-staying-dry">The problem – complex role configuration and staying DRY</h2>
+
+<h4 id="the-context-2">The context</h4>
+
+<p>Lets say you have <a href="https://github.com/jdauphant/ansible-role-nginx">nginx</a> role on board and it manages many Nginx instances. Some of them need various SSL certs or are working with different application servers. How to manage that and stay DRY?</p>
+
+<h4 id="cheat-with-jinja2-features">Cheat with Jinja2 features</h4>
+
+<p>Ansible uses YAML language for tasks definition and despite its simplicity, it has some limitations (e.g. config inheritance). Here comes <a href="http://docs.ansible.com/ansible/playbooks_filters.html">Jinja2</a> template language that would help in such cases. Let me explain it on an example, e.g. with this <a href="https://github.com/jdauphant/ansible-role-nginx">nginx</a> role. The role is used upon the wrapper role pattern described above and contains:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="c1"># meta/main.yml</span>
+<span class="nn">---</span>
+<span class="na">dependencies</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">ansible-role-nginx</span>
+
+<span class="c1"># vars/main.yml</span>
+<span class="nn">---</span>
+
+<span class="na">common_conf</span><span class="pi">:</span> <span class="pi">|</span>
+  <span class="s">index index.html;</span>
+
+  <span class="s">location /favicon.ico {</span>
+    <span class="s">return 204;</span>
+    <span class="s">access_log     off;</span>
+    <span class="s">log_not_found  off;</span>
+  <span class="s">}</span>
+
+  <span class="s">location /robots.txt {</span>
+    <span class="s">alias ;</span>
+  <span class="s">}</span>
+
+  <span class="s">...</span>
+
+<span class="na">nginx_configs</span><span class="pi">:</span>
+  <span class="na">ssl</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">ssl_certificate_key /cert.key</span>
+    <span class="pi">-</span> <span class="s">ssl_certificate     /cert.pem</span>
+  <span class="na">upstream</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">upstream</span> 
+
+<span class="na">nginx_http_params</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">proxy_cache_path  /var/www/nginx-cache/  levels=1:2 keys_zone=one:10m inactive=7d  max_size=200m</span>
+  <span class="pi">-</span> <span class="s">proxy_temp_path   /var/www/nginx-tmp/</span></code></pre></figure>
+
+<p>Then, for a concrete host or group vars of your inventory, specify final configuration. Lets say you have <em>foo</em> app and you’d like to provide config for <em>bar</em> host that reside within your inventory file. Given that:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="c1"># host_vars/bar/nginx.yml</span>
+<span class="nn">---</span>
+<span class="na">root_dir</span><span class="pi">:</span> <span class="s">/var/www/foo/public/</span>
+<span class="na">location_app</span><span class="pi">:</span> <span class="pi">|</span>
+  <span class="s">proxy_pass http://some_cluster;</span>
+  <span class="s">proxy_set_header X-Accel-Buffering no;</span>
+  <span class="s">...</span>
+
+
+<span class="na">location_app_https</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">location_app</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="pi">-</span> <span class="s">proxy_set_header X-Forwarded-Proto https;</span>
+
+<span class="na">app_common_conf</span><span class="pi">:</span> <span class="pi">|</span>
+  <span class="s">server_name bar.example.com;</span>
+  <span class="s">root {{ root_dir }};</span>
+
+  <span class="s">location / {</span>
+    <span class="s">try_files $uri $uri/index.html $uri.html @app;</span>
+  <span class="s">}</span>
+<span class="na">nginx_sites</span><span class="pi">:</span>
+  <span class="na">status</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">listen </span><span class="m">80</span>
+    <span class="pi">-</span> <span class="s">server_name 127.0.0.1</span>
+    <span class="pi">-</span> <span class="s">location /status { allow 127.0.0.1; deny all; stub_status on; }</span>
+  <span class="na">app</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">listen </span><span class="m">80</span>
+    <span class="pi">-</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">common_conf</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="pi">-</span> <span class="s2">"</span><span class="s">{{app_common_conf}}"</span>
+    <span class="pi">-</span> <span class="pi">|</span>
+      <span class="s">location @app {</span>
+        <span class="s">{{ location_app }}</span>
+      <span class="s">}</span>
+  <span class="na">app_ssl</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">listen 443 ssl</span>
+    <span class="pi">-</span> <span class="s2">"</span><span class="s">{{common_conf}}"</span>
+    <span class="pi">-</span> <span class="s2">"</span><span class="s">{{app_common_conf}}"</span>
+    <span class="pi">-</span> <span class="pi">|</span>
+      <span class="s">location @app {</span>
+        <span class="s">{{ location_app_https | join(" ") }}</span>
+      <span class="s">}</span>
+
+
+<span class="na">upstream</span><span class="pi">:</span>
+  <span class="s">some_cluster { server unix:/var/www/foo/tmp/sockets/unicorn.sock fail_timeout=0; }</span></code></pre></figure>
+
+<p>And certs file, encrypted with <em>ansible-vault</em> is given as:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="c1"># host_vars/bar/cert.yml</span>
+<span class="nn">---</span>
+<span class="na">ssl_certs_privkey</span><span class="pi">:</span> <span class="pi">|</span>
+  <span class="s">-----BEGIN CERTIFICATE-----</span>
+  <span class="s">...</span>
+  <span class="s">-----END CERTIFICATE-----</span>
+
+<span class="na">ssl_certs_cert</span><span class="pi">:</span> <span class="pi">|</span>
+  <span class="s">-----BEGIN PRIVATE KEY-----</span>
+  <span class="s">...</span>
+  <span class="s">-----END PRIVATE KEY-----</span></code></pre></figure>
+
+<p>The <a href="https://github.com/jdauphant/ansible-role-nginx">nginx</a> role doesn’t install SSL certs itself so it’s up to you how and where you’d like to put them. However, it might be simply achieved with these tasks, applied before nginx role:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Ensure SSL folder exist</span>
+  <span class="na">file</span><span class="pi">:</span> <span class="pi">&gt;</span>
+    <span class="s">path={{ssl_certs_path}}</span>
+    <span class="s">state=directory</span>
+    <span class="s">owner="{{ssl_certs_path_owner}}"</span>
+    <span class="s">group="{{ssl_certs_path_group}}"</span>
+    <span class="s">mode=700</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Provide nginx SSL cert.pem</span>
+  <span class="na">copy</span><span class="pi">:</span> <span class="pi">&gt;</span>
+    <span class="s">content="{{ ssl_certs_privkey }}"</span>
+    <span class="s">dest={{ssl_certs_path}}/cert.pem</span>
+    <span class="s">owner="{{ssl_certs_path_owner}}"</span>
+    <span class="s">group="{{ssl_certs_path_group}}"</span>
+    <span class="s">mode=700</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Provide nginx SSL cert.key</span>
+  <span class="na">copy</span><span class="pi">:</span> <span class="pi">&gt;</span>
+    <span class="s">content="{{ ssl_certs_cert }}"</span>
+    <span class="s">dest={{ssl_certs_path}}/cert.key</span>
+    <span class="s">owner="{{ssl_certs_path_owner}}"</span>
+    <span class="s">group="{{ssl_certs_path_group}}"</span>
+    <span class="s">mode=700</span></code></pre></figure>
+
+<p>Note the difference between <em>&gt;</em> and <em>|</em> in YAML. The former is the folded style and means that any newline in YAML will be replaced with space character, whereas the latter preserves newline character.</p>
+
+<p><a href="http://docs.ansible.com/ansible/playbooks_filters.html">Jinja2</a> templates in conjunction of YAML features, provide great flexibility in config definition. However, as of Ansible 2.0, it’s likely that it will change slightly, because it will be possible to use Jinja2 <a href="http://docs.ansible.com/ansible/playbooks_filters.html#combining-hashes-dictionaries">combine</a> feature for merging hashes.</p>
+
+
+  </article>
+  
+  <article class="post">
+    <h1 class="post-title">
+      <a href="/2015/10/09/why-we-dont-focus-on-testing-ansible-roles-extensively/">
+        Why we don't focus on testing Ansible roles extensively
+      </a>
+    </h1>
+
+    <time datetime="2015-10-09T19:06:51+00:00" class="post-date">09 Oct 2015</time>
+    
+    <p></p>
+    
+
+    <p>We provision our environments with Ansible and we want these to be super–reliable. However, having sometimes several daily deployments, how to ensure that any change will not ruin the production environment? Some whisper to move to the containers world and get rid of the traditional way of provisioning/maintaining environments. Here, in the middle of major Ops changes, we use private cluster working on bare metal and so, we have slightly different requirements than the cloud world. We don’t use containers everywhere and we don’t have a plan to do so, at least within apps related context. As we provision with Ansible we want to be sure that any change will not cause any environment outage.</p>
+
+<p>Testing any CM tool is not a trivial task, because they essentially need an isolated environment to fire tests. It’s not just a matter of amount of RAM or CPU cycles, but primarily of having the dedicated environment the services need to operate. Moreover, as we use private cluster whereas we don’t manage it, we have just a bunch of VM’s we can use in whatever manner is needed, but still without any easy way to drop or spin up new VM.</p>
+
+<h1 id="testing-ansible-changes">Testing Ansible changes</h1>
+
+<p>The Ansible tool marvelously implements <a href="http://garylarizza.com/blog/2014/02/17/puppet-workflow-part-2/">roles–profiles</a> pattern, which give us the ability to test any particular service in isolation – let’s call it as a service unit test. In Ansible terms, any service is simply a role that delivers some set of commands to ensure that service is up and running. Here, we can distinguish certain test levels criteria:</p>
+
+<ol>
+  <li>Service is up and running on localhost.</li>
+  <li>Service talks to authorized clients.</li>
+  <li>Service delivers appropriate content.</li>
+</ol>
+
+<p>Testing the first level is often met by the role itself and since you’d use something out of the box, you’ve it included. Ansible has a bunch of predefined modules and another tons within Ansible Galaxy maintained by the vast community. Actually it’s very likely any tool you’d imagine to use has already well–prepared role ready for deployment.</p>
+
+<p>The next levels of tests are completely up to you, but you’d probably find, that it’s getting complicated fast, even for a small change, e.g. adding another web–VM instance within <code class="language-plaintext highlighter-rouge">hba.conf</code> file to get access to PostgreSQL database. So we started to consider of having a CI for infrastructure provisioner, where:</p>
+
+<ol>
+  <li>The cost of environment preparation is relatively small.</li>
+  <li>Time of execution is as minimized as possible.</li>
+</ol>
+
+<p>Having these assumptions defined, consider the schema below:</p>
+
+<p><img src="/static/img/20151009/ansible_ci.png" alt="" /></p>
+
+<p>In short, when developer commits new change to Gerrit, Jenkins triggers new job for <a href="https://github.com/test-kitchen/test-kitchen">test–kitchen</a> gem, which internally spawns Docker container(s) to perform change tests. Gem test–kitchen is able to establish more containers at once and run tests concurrently. To distinguish what roles have changed per commit:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">git diff-tree <span class="nt">--no-commit-id</span> <span class="nt">--name-only</span> <span class="nt">-r</span> COMMIT_ID | <span class="nb">grep</span> <span class="nt">-e</span> <span class="s1">'roles\/'</span></code></pre></figure>
+
+<p>I’ve built an <a href="https://github.com/blelump/garage/tree/master/ansible_docker_test_kitchen">example</a> of how to use test–kitchen with predefined Docker image where tests run in a matter of seconds. It really works great, but in context of role, not the whole system. The awesomeness disappear when you realize it’s not what you wanted to achieve, because in case of Ops – in my opinion – it’s more important to focus on integration tests to provide more customer oriented environment, e.g. at least to test if given service is running or responding instead of focusing if directory exists or config has changed.</p>
+
+<p>Indeed, if tests run per each role, it’s easy to spin up test environments and run tests fast thanks to containers. Such tests, however, have the drawback that they don’t give the value you’d expect – each role provides some service, but testing such single service without interaction with other services is quite meaningless. Nginx won’t serve appropriate content without interaction with some webserver and so, webserver won’t serve appropriate content without some database and so on.</p>
+
+<p>On the other hand, blending all Docker–Jenkins–whatever tools to build CI just for testing for Nginx availability on port 80 is like using a sledgehammer to crack a nut. So we decided to discontinue such process, because of the overhead of preparation test environments to gain valuable results.</p>
+
+<h1 id="the-good-the-bad-and-the-ugly">The good the bad and the ugly</h1>
+
+<p>Nonetheless, the idea of role–oriented tests is definitely worth looking at. With some investment in scripting and perhaps Docker Compose on board, it would spin the environment with services talking to each other, but it’s still an overhead to deal with. Besides, there’re also Docker containers limitations regarding changes in container networking or firewall (need extra <code class="language-plaintext highlighter-rouge">--privileged</code> mode) and so they also should be discussed before entering containers.</p>
+
+<p>As for our CI environment, so far we’ve ended up with testing Ansible changes using flags <code class="language-plaintext highlighter-rouge">--syntax-check --check</code> on appropriate playbook from within Jenkins job and doing peer review.</p>
+
+
+  </article>
+  
+</div>
+
+<div class="pagination">
+  
+  <a class="pagination-item older" href="/page2">Older</a>
+  
+  
+  <span class="pagination-item newer">Newer</span>
+  
+</div>
+
+      </main>
+
+      <footer class="footer">
+        <small>
+          OpenSoftware <time datetime="2022-07-07T21:28:21+00:00">2022</time>. CC BY-NC-SA 3.0.
+        </small>
+      </footer>
+    </div>
+    <script>
+      var show = function (elem) {
+        elem.classList.add('is-visible');
+      };
+
+      // Hide an element
+      var hide = function (elem) {
+        elem.classList.remove('is-visible');
+      };
+
+      // Toggle element visibility
+      var toggle = function (elem) {
+        elem.classList.toggle('is-visible');
+      };
+
+      document.querySelector("#nav-toggle").addEventListener("click", function(event) {
+        var content = document.querySelector(".pull");
+        if (!content) return;
+
+        toggle(content);
+      });
+
+    </script>
+  </body>
+</html>

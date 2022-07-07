@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      DevOps in small companies – part II – entering automation &middot; 
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/bootstrap.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" sizes="144x144" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/atom+xml" title="" href="/atom.xml">
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home" class='logo'></a>
+          <nav class="pull toggle-content">
+            <ul class="top-nav">
+              
+              <li><h2><a href="/archive">Archive</a></h2></li>
+              
+              <li><h2><a href="/atom.xml">Feed</a></h2></li>
+              
+            </ul>
+          </nav>
+          <div class="text-right navicon">
+            <a id="nav-toggle" class="nav_slide_button" href="#"><span></span></a>
+          </div>
+        </h3>
+      </header>
+
+      <main>
+        
+<p>
+<i class="glyphicon glyphicon-tags" style="padding-right: .5rem;"></i>
+
+<a href="/tag/DevOps" title="View posts tagged with &quot;DevOps&quot;"><u>DevOps</u></a>, 
+
+<a href="/tag/Configuration management" title="View posts tagged with &quot;Configuration management&quot;"><u>Configuration management</u></a>, 
+
+<a href="/tag/Automation" title="View posts tagged with &quot;Automation&quot;"><u>Automation</u></a>, 
+
+<a href="/tag/Ansible" title="View posts tagged with &quot;Ansible&quot;"><u>Ansible</u></a>, 
+
+<a href="/tag/Jenkins" title="View posts tagged with &quot;Jenkins&quot;"><u>Jenkins</u></a>, 
+
+<a href="/tag/Gerrit" title="View posts tagged with &quot;Gerrit&quot;"><u>Gerrit</u></a>
+
+</p>
+
+
+<article class="post">
+  <h1 class="post-title">DevOps in small companies – part II – entering automation</h1>
+  <time datetime="2016-01-14T16:24:53+00:00" class="post-date">14 Jan 2016</time>
+  
+  <p></p>
+  
+  <p>A few months ago I’ve written <a href="/2015/09/11/devops-in-small-companies-part-i/">first post</a> in this series and it seems it’s time to continue the discussion, because things didn’t stop. Not at all.</p>
+
+<p>The investment in configuration, or to be more specific, in automating things isn’t free. It depends on many factors, obviously, and here it was a compromise between <em>what needs to be done</em> and <em>what could be done</em>. In our case automation, configuration management (CM) or whatever in between was the second one. The world wouldn’t end while not having CM solutions on board. Especially here, where we don’t manage a farm of VM’s in a cloud environment and to be honest, where any action could be done <em>manually</em>.</p>
+
+<h3 id="even-though-you-manage-even-one-simple-vm-id-automate-this">Even though you manage even one simple VM, I’d automate this</h3>
+
+<p>During last months we’ve done a lot in case of automation. We’ve also learned a lot, I mean not only the new tools, but the two–words I’d call ‘good practices’ in case of the overall environment management. We manage about 10 VM’s so it’s not much and these are in private University cluster. We’re not clouded with all of its pros and cons, but we try (or apply eventually) some cloud–solutions, e.g. we really value the cattle vs. kittens paradigm (covered in <a href="/2015/09/11/devops-in-small-companies-part-i/#the-kittens-world">first blog post</a> of this series).</p>
+
+<p>Although we don’t manage big clusters or clouds, we managed some good practices that apply in any environment. We believe that:</p>
+
+<ol>
+  <li>Any taken action closer to automation makes your environments less error–prone. It’s insanely important in any environment, whether you have a huge cluster or a single VM, because tools works fine until someone touches it, right? If so, don’t let anyone touch anything directly, automate it.</li>
+  <li>Any part of automated configuration is recreatable, repeatable, and so it’s testable! You can test whatever you want in a way however you want to before putting it into production environment.</li>
+  <li>Any part of automated configuration can be reused and applied within any other environment. These are so–called roles and you can re–use them for any environment you’d like to provision.</li>
+  <li>Automation standarizes your environment, either a huge cluster or a single VM. It encourages you or any other person in the team to do things in a specific way, so any other person after any period of time can handle this. Whether edit some config of important tool or just add another package to the system, it all lies in one place.</li>
+</ol>
+
+<h3 id="automating-things-isnt-free">Automating things isn’t free</h3>
+
+<p>Daily work still needs to be done, because automation isn’t a top priority. Having said that, most of the CM–related work we’ve made during spare time. Week after week another components joined to the “automated WALL·E family”. We’ve used Ansible as the CM–tool and I believe personally it was a good choice, because it simply let us do the job. We’ve also introduced a few tools to achieve simple CI and so we added Jenkins, which integrates with our Gerrit to perform code review so each Ansible change has been tested upon staging environment before merge into master branch. Furthermore, for any master branch merge, Gerrit triggered an event and so Jenkins would run production build. The complete process is shown below:</p>
+
+<p><img src="/static/img/20160114/opensoftware_CI.png" alt="" /></p>
+
+<h3 id="however-running-automated-things-is-so-dont-keep-dinosaurs">However, running automated things, is so don’t keep dinosaurs</h3>
+
+<p>Once you’ve built automated configuration, your environments are no more pets or dinosaurs. They’re easily recreatable and configurable at scale if needed. However, the ‘scale’ word is not necessary here at all. Even having just a single VM, e.g. company developer tools VM, would be a good practice to <a href="/2015/09/11/devops-in-small-companies-part-i/#where-shall-i-start">clean it up</a> and automate, because such VM’s become dinosaurs fast. Once the toolset has been installed, it’s better to not touch it at all, because who would ever remember why they’re exist in a such way.</p>
+
+<p>To give certain examples, we’ve entered automated configuration world and gather profits from:</p>
+
+<ul>
+  <li>Standarization, where these old dinosaur–like VM’s again became manageable.</li>
+  <li>Changes testability, where each change can be tested before putting into prodution environment.</li>
+  <li>Recreatable environments, so we can forget about VM major system upgrade and instead create exactly the same VM, but with newer environment version – this is so–called zero downtime migration.</li>
+  <li>Monitoring things. It’s a shame to say that, but we weren’t monitor our services until that time. It’s quite interesting what metrics could tell you about particular service or the whole system. I mean, among other things, counting or measuring requests response time for certain views (actually it’s a topic for another blog post).</li>
+  <li>…each other, because all these configs, packages and other manageable things lie in one place and so anyone can enter the repository and see how exactly that thing has been performed or installed. It’s all way more transparent.</li>
+</ul>
+
+<p>Don’t feel ashamed and start automating things today.</p>
+
+
+</article>
+
+<aside class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+    <li>
+      <h3>
+        <a href="/2016/11/07/interface-designer-manifesto/">
+          Software Interface Designer Manifesto
+          <small><time datetime="2016-11-07T21:38:32+00:00">07 Nov 2016</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2016/01/27/meet-stats-whisper-the-stats-gatherer/">
+          Stats Whisper, the stats gatherer
+          <small><time datetime="2016-01-27T19:50:40+00:00">27 Jan 2016</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2015/11/30/first-solution-isnt-always-the-smartest-a-few-thoughts-about-using-ansible/">
+          First solution isn't always the smartest – a few thoughts about using Ansible
+          <small><time datetime="2015-11-30T11:23:14+00:00">30 Nov 2015</time></small>
+        </a>
+      </h3>
+    </li>
+    
+  </ul>
+</aside>
+
+
+
+<!-- Add Disqus comments. -->
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'opensoftwareblog';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+      </main>
+
+      <footer class="footer">
+        <small>
+          OpenSoftware <time datetime="2022-07-07T21:28:21+00:00">2022</time>. CC BY-NC-SA 3.0.
+        </small>
+      </footer>
+    </div>
+    <script>
+      var show = function (elem) {
+        elem.classList.add('is-visible');
+      };
+
+      // Hide an element
+      var hide = function (elem) {
+        elem.classList.remove('is-visible');
+      };
+
+      // Toggle element visibility
+      var toggle = function (elem) {
+        elem.classList.toggle('is-visible');
+      };
+
+      document.querySelector("#nav-toggle").addEventListener("click", function(event) {
+        var content = document.querySelector(".pull");
+        if (!content) return;
+
+        toggle(content);
+      });
+
+    </script>
+  </body>
+</html>

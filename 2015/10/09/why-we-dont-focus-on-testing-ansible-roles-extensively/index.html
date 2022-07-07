@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      Why we don't focus on testing Ansible roles extensively &middot; 
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/bootstrap.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" sizes="144x144" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/atom+xml" title="" href="/atom.xml">
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home" class='logo'></a>
+          <nav class="pull toggle-content">
+            <ul class="top-nav">
+              
+              <li><h2><a href="/archive">Archive</a></h2></li>
+              
+              <li><h2><a href="/atom.xml">Feed</a></h2></li>
+              
+            </ul>
+          </nav>
+          <div class="text-right navicon">
+            <a id="nav-toggle" class="nav_slide_button" href="#"><span></span></a>
+          </div>
+        </h3>
+      </header>
+
+      <main>
+        
+<p>
+<i class="glyphicon glyphicon-tags" style="padding-right: .5rem;"></i>
+
+<a href="/tag/DevOps" title="View posts tagged with &quot;DevOps&quot;"><u>DevOps</u></a>, 
+
+<a href="/tag/Continuous integration" title="View posts tagged with &quot;Continuous integration&quot;"><u>Continuous integration</u></a>, 
+
+<a href="/tag/Ansible" title="View posts tagged with &quot;Ansible&quot;"><u>Ansible</u></a>, 
+
+<a href="/tag/Docker" title="View posts tagged with &quot;Docker&quot;"><u>Docker</u></a>, 
+
+<a href="/tag/Jenkins" title="View posts tagged with &quot;Jenkins&quot;"><u>Jenkins</u></a>, 
+
+<a href="/tag/test–kitchen" title="View posts tagged with &quot;test–kitchen&quot;"><u>test–kitchen</u></a>
+
+</p>
+
+
+<article class="post">
+  <h1 class="post-title">Why we don't focus on testing Ansible roles extensively</h1>
+  <time datetime="2015-10-09T19:06:51+00:00" class="post-date">09 Oct 2015</time>
+  
+  <p></p>
+  
+  <p>We provision our environments with Ansible and we want these to be super–reliable. However, having sometimes several daily deployments, how to ensure that any change will not ruin the production environment? Some whisper to move to the containers world and get rid of the traditional way of provisioning/maintaining environments. Here, in the middle of major Ops changes, we use private cluster working on bare metal and so, we have slightly different requirements than the cloud world. We don’t use containers everywhere and we don’t have a plan to do so, at least within apps related context. As we provision with Ansible we want to be sure that any change will not cause any environment outage.</p>
+
+<p>Testing any CM tool is not a trivial task, because they essentially need an isolated environment to fire tests. It’s not just a matter of amount of RAM or CPU cycles, but primarily of having the dedicated environment the services need to operate. Moreover, as we use private cluster whereas we don’t manage it, we have just a bunch of VM’s we can use in whatever manner is needed, but still without any easy way to drop or spin up new VM.</p>
+
+<h1 id="testing-ansible-changes">Testing Ansible changes</h1>
+
+<p>The Ansible tool marvelously implements <a href="http://garylarizza.com/blog/2014/02/17/puppet-workflow-part-2/">roles–profiles</a> pattern, which give us the ability to test any particular service in isolation – let’s call it as a service unit test. In Ansible terms, any service is simply a role that delivers some set of commands to ensure that service is up and running. Here, we can distinguish certain test levels criteria:</p>
+
+<ol>
+  <li>Service is up and running on localhost.</li>
+  <li>Service talks to authorized clients.</li>
+  <li>Service delivers appropriate content.</li>
+</ol>
+
+<p>Testing the first level is often met by the role itself and since you’d use something out of the box, you’ve it included. Ansible has a bunch of predefined modules and another tons within Ansible Galaxy maintained by the vast community. Actually it’s very likely any tool you’d imagine to use has already well–prepared role ready for deployment.</p>
+
+<p>The next levels of tests are completely up to you, but you’d probably find, that it’s getting complicated fast, even for a small change, e.g. adding another web–VM instance within <code class="language-plaintext highlighter-rouge">hba.conf</code> file to get access to PostgreSQL database. So we started to consider of having a CI for infrastructure provisioner, where:</p>
+
+<ol>
+  <li>The cost of environment preparation is relatively small.</li>
+  <li>Time of execution is as minimized as possible.</li>
+</ol>
+
+<p>Having these assumptions defined, consider the schema below:</p>
+
+<p><img src="/static/img/20151009/ansible_ci.png" alt="" /></p>
+
+<p>In short, when developer commits new change to Gerrit, Jenkins triggers new job for <a href="https://github.com/test-kitchen/test-kitchen">test–kitchen</a> gem, which internally spawns Docker container(s) to perform change tests. Gem test–kitchen is able to establish more containers at once and run tests concurrently. To distinguish what roles have changed per commit:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">git diff-tree <span class="nt">--no-commit-id</span> <span class="nt">--name-only</span> <span class="nt">-r</span> COMMIT_ID | <span class="nb">grep</span> <span class="nt">-e</span> <span class="s1">'roles\/'</span></code></pre></figure>
+
+<p>I’ve built an <a href="https://github.com/blelump/garage/tree/master/ansible_docker_test_kitchen">example</a> of how to use test–kitchen with predefined Docker image where tests run in a matter of seconds. It really works great, but in context of role, not the whole system. The awesomeness disappear when you realize it’s not what you wanted to achieve, because in case of Ops – in my opinion – it’s more important to focus on integration tests to provide more customer oriented environment, e.g. at least to test if given service is running or responding instead of focusing if directory exists or config has changed.</p>
+
+<p>Indeed, if tests run per each role, it’s easy to spin up test environments and run tests fast thanks to containers. Such tests, however, have the drawback that they don’t give the value you’d expect – each role provides some service, but testing such single service without interaction with other services is quite meaningless. Nginx won’t serve appropriate content without interaction with some webserver and so, webserver won’t serve appropriate content without some database and so on.</p>
+
+<p>On the other hand, blending all Docker–Jenkins–whatever tools to build CI just for testing for Nginx availability on port 80 is like using a sledgehammer to crack a nut. So we decided to discontinue such process, because of the overhead of preparation test environments to gain valuable results.</p>
+
+<h1 id="the-good-the-bad-and-the-ugly">The good the bad and the ugly</h1>
+
+<p>Nonetheless, the idea of role–oriented tests is definitely worth looking at. With some investment in scripting and perhaps Docker Compose on board, it would spin the environment with services talking to each other, but it’s still an overhead to deal with. Besides, there’re also Docker containers limitations regarding changes in container networking or firewall (need extra <code class="language-plaintext highlighter-rouge">--privileged</code> mode) and so they also should be discussed before entering containers.</p>
+
+<p>As for our CI environment, so far we’ve ended up with testing Ansible changes using flags <code class="language-plaintext highlighter-rouge">--syntax-check --check</code> on appropriate playbook from within Jenkins job and doing peer review.</p>
+
+
+</article>
+
+<aside class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+    <li>
+      <h3>
+        <a href="/2016/11/07/interface-designer-manifesto/">
+          Software Interface Designer Manifesto
+          <small><time datetime="2016-11-07T21:38:32+00:00">07 Nov 2016</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2016/01/27/meet-stats-whisper-the-stats-gatherer/">
+          Stats Whisper, the stats gatherer
+          <small><time datetime="2016-01-27T19:50:40+00:00">27 Jan 2016</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2016/01/14/devops-in-small-companies-part-ii-entering-automation/">
+          DevOps in small companies – part II – entering automation
+          <small><time datetime="2016-01-14T16:24:53+00:00">14 Jan 2016</time></small>
+        </a>
+      </h3>
+    </li>
+    
+  </ul>
+</aside>
+
+
+
+<!-- Add Disqus comments. -->
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'opensoftwareblog';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+      </main>
+
+      <footer class="footer">
+        <small>
+          OpenSoftware <time datetime="2022-07-07T21:28:21+00:00">2022</time>. CC BY-NC-SA 3.0.
+        </small>
+      </footer>
+    </div>
+    <script>
+      var show = function (elem) {
+        elem.classList.add('is-visible');
+      };
+
+      // Hide an element
+      var hide = function (elem) {
+        elem.classList.remove('is-visible');
+      };
+
+      // Toggle element visibility
+      var toggle = function (elem) {
+        elem.classList.toggle('is-visible');
+      };
+
+      document.querySelector("#nav-toggle").addEventListener("click", function(event) {
+        var content = document.querySelector(".pull");
+        if (!content) return;
+
+        toggle(content);
+      });
+
+    </script>
+  </body>
+</html>
