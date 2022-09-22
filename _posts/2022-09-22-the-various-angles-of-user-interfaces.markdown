@@ -39,7 +39,6 @@ Consider another example:
 
 While information categorization can be applied in various contexts, it will be always personal. A person in digital space can use email labels or tags, directory structure on hard(pen) drive, or have no organization at all. Note all these activities lead to UI's and managing information through UI's. As discussed above, UI's serve their purpose for information management until they don't. The following chart shows the relationship between amount of information to be managed and UI capabilities to handle it.
 
-![](https://i.imgur.com/DqFK3Mh.png)
 [![][1]][1]
 
 In other words in a contextual, cross category information searches, no UI will play well, as UI is limited by its primary strength -- the information categorization behavior. The more information to be managed, the less effective UI becomes.
