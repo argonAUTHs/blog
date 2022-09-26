@@ -11,8 +11,8 @@ pre {
 code {
   padding: .25em .5em;
   font-size: 85%;
-  color: #bf616a;
-  background-color: #f9f9f9;
+  color: #E4E4E4;
+  background-color: grey;
   border-radius: 3px;
 }
 
@@ -24,18 +24,20 @@ pre {
 pre code {
   padding: 0;
   font-size: 100%;
-  color: inherit;
-  background-color: transparent;
+  color: #E4E4E4;
+  background-color: grey;
+  display: block;
 }
 
 // Pygments via Jekyll
 .highlight {
-  padding: 1rem;
+  padding: 10px;
   margin-bottom: 1rem;
   font-size: .8rem;
   line-height: 1.4;
-  background-color: #f9f9f9;
   border-radius: .25rem;
+  color: #E4E4E4;
+  background-color: grey;
 
   pre {
     margin-bottom: 0;
