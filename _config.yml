@@ -5,3 +5,7 @@ permalink:           pretty
 paginate:            5
 plugins:
   - jekyll-paginate
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  input: GFM
