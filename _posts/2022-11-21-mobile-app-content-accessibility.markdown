@@ -11,7 +11,6 @@ comments: true
 ---
 
 Nowadays, with the growth of technology and its usage in society, more and more stuff can be done with a tap on the screen. Shopping, ordering food, even taking a loan, all this is possible without leaving the home. Moreover, it's a technological goal to make everyday situations done within a short period of time when simply sitting on a couch. However, when for most of the people can more or less easily access such an app, it is important to make it reachable to the group of people with disabilities. 
-
 ## W3C guide
 In its [main document about mobile accessibility](https://www.w3.org/TR/mobile-accessibility-mapping/) , W3C points out that mobile doesn't only mean phones - other wearable and portable devices count here as well. But let us focus on the apps designed for what we always keep in our pockets. The organization has chosen four principles, that mobile applications designed to be approachable for the disabled should follow:
 - **Perceivance -** Becoming aware of users' incapacities, this part of the documents speaks of the screen size, zoom and contrast
@@ -124,155 +123,160 @@ Another important concept is whether it is possible to somehow encode a desire f
 
 - **Acessibility overlay idea #1** - For some requirements it would be possible to inject them into the widget tree combining not two but THREE overlays. Considering using [json_dynamic_widget](https://pub.dev/packages/json_dynamic_widget) as a widget tree builder and some own code for merging two JSONs into package-readable one, the third JSON aka accessibility overlay would have to be injected into layout overlay JSON. Let us consider some particular requirements:
     - Label positioning - This one is possible to impose, with some constraints. What is not known from the TextFormField widget and its arguments itself is whether the developer has put the field in a column/row with a text description, *fake label*. Below is an example of a JSON describing a text_form_field.
-    ```json=
-    "type": "text_form_field",
-    "id": "first_name",
-    "args": {
-      "decoration": {
-        "hintText": "John",
-        "labelText": "First Name",
-      },
-    ```
+
+      ```json
+      {
+        "type": "text_form_field",
+        "id": "first_name",
+        "args": {
+          "decoration": {
+            "hintText": "John",
+            "labelText": "First Name",
+          },
+        }
+      }
+      ```
     If a developer has put a `hintText` there, but no `labelText`, code that merges the overlays could put `hintText` value for a `labelText`. Not a perfect solution, since label should be a definite word describing input, while hint should be providing an example for an input, but when a hintText says `Your name, e.g. John`, such label text would be enough to understand. If a developer has put a fake label above a TextFormField, that would be more difficult, but the merger could check for a widget "next to" the TextFormField. ONLY if they remain in the same row/column. But what if they do not? 
     
     - keyboard type - robustness criterium to provide e.g. numeric keyboard when a PIN input is wanted. Again, having in mind a Flutter `TextFormField` widget, it can define a keyboard type using `keyboardType` attribute:
-    ```json=
-    "type": "text_form_field",
-    "id": "first_name",
-    "args": {
-      "keyboardType": "phone"
-        
-    ```
+      ```json
+      "type": "text_form_field",
+      "id": "first_name",
+      "args": {
+        "keyboardType": "phone"
+      }
+      ```
     Easy to inject as well. Merging code could easily impose a `keyboardType` arg if it has not been provided. BUT what kind of keyboard type? Accessibility recommendation is that a specific input is provided for some fields like phone number. No doubts about that, for people using switch access it would be much faster to switch through 9 numbers that wait for the right number on the qwerty keyboard to show. The proposal is to provide it. However, the input type depends on the form data themselves. It is not possible to do something like this for accessibility overlay:
-    ```json=
-    "accessibility":[
-        {
-            "type": "text_form_field",
-            "args":{
-                "keyboardType": true
-            }
-        }
-    ]
-    ```
+      ```json
+      "accessibility":[
+          {
+              "type": "text_form_field",
+              "args":{
+                  "keyboardType": true
+              }
+          }
+      ]
+      ```
     This way, what can be achieved is a necessity to provide a keyboard type. But the type itself would have to be read e.g. from a label - if it says 'phone', go for `"keyboardType" : "phone"`. 'email address'? `"keyboardType" : "emailAddress"`. But what if the label says something completely different, like PESEL evidential number? Merging code would have to be programmed to read this as a numeric input. Moreover, it is not possible to just copy the label as a keyboard type. Email being a great example for this one.
     
     - Link purpose - Is it even possible to define this one? The AAA criterium says that every link text should define link purpose. Considering such a situation - the developer is making an app about birds. Each screen is a name, photo and short description of a bird. App is accessible, contrast is 8.5:1, font is large. At the bottom of each screen there is a smaller `Source of information` text, which serves as a link to a Wikipedia page about each bird. And this is perfectly fine, screen reader would read this as "Source of information. Double tap to activate" or something similar, the user would know how to follow it. But is it achievable to enforce a understandable link text? Let us start with the fact that it is UNKNOWN whether a text is a link - Flutter has no link widget, and a simple way to provide a link text would look like [this](https://stackoverflow.com/questions/43583411/how-to-create-a-hyperlink-in-flutter-widget) (`url_launcher` package required):
-    ```dart=
-    InkWell(
-      child: Text('Open Browser'),
-      onTap: () => launch('https://docs.flutter.io/flutter/services/UrlLauncher-class.html')
-  ),
-    ```
+      ```dart
+      InkWell(
+        child: Text('Open Browser'),
+        onTap: () => launch('https://docs.flutter.io/flutter/services/UrlLauncher-class.html')
+    ),
+      ```
     It is not desirable to impose something on each `InkWell` widget as none of them have to be links. But hypothetically, considering there exists a link widget, how can it be forced to say "Source of information" instead of e.g. "x"? Only when it is known that the screen is responsible of information about birds and if a link occurs, it is a source of information on Wikipedia. Such hypothetical accessibility overlay could look like this:
-    ```json=
-    "accessibility":[
-        {
-            "type": "link_widget",
-            "args":{
-                "text": "Source of information"
-            }
-        }
-    ]
-    ```
+      ```json
+      "accessibility":[
+          {
+              "type": "link_widget",
+              "args":{
+                  "text": "Source of information"
+              }
+          }
+      ]
+      ```
     - Focus visible - a criterium that actually could be imposed by an accessibility layout. Not in the best possible way, hovever. This one mentions that a focused field (let us talk about a `TextFormField` again...) should be easily distinguished from a non-focused one. Luckily, `TextFormField`'s `InputDecoration` has a field called `focusedBorder`, which defines a border, that is shown when the field is focused. Accessiblity overlay could force that a border width, when the field is not fucused would be 1 and when focused, 3. It would enable the user to distinguish between the states of the text field:
-    ```json=
-    "accessibility":[
-        {
-            "type": "text_form_field",
-            "args": {
-              "decoration": {
-                    "focusedBorder": {
-                        "type": "outline",
-                        "args":{
-                            "borderSide":{
-                                "width" : 3
-                            }
-                        }
-                    },
-                    "border": {
-                        "type": "outline",
-                        "args":{
-                            "borderSide":{
-                                "width" : 1
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    ]
-    ```
+      ```json
+      "accessibility":[
+          {
+              "type": "text_form_field",
+              "args": {
+                "decoration": {
+                      "focusedBorder": {
+                          "type": "outline",
+                          "args":{
+                              "borderSide":{
+                                  "width" : 3
+                              }
+                          }
+                      },
+                      "border": {
+                          "type": "outline",
+                          "args":{
+                              "borderSide":{
+                                  "width" : 1
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+      ]
+      ```
     
     This way color of none of the borders would be defined, but the difference between focused and unfocused state would be imposed.
     
     - Interactive elements size - Luckily, when it comes to buttons (but buttons only!) Flutter provides a way to define their size. Each of the button classes (`ElevatedButton`, `OutlinedButton`, `TextButton`) has an attribute called `minimumSize`:
-    ```dart=
-    ElevatedButton(
-        onPressed: onPressed, 
-        child: const Text('x'),
-        style: ElevatedButton.styleFrom(
-          minimumSize: Size(48, 48),
-        ),
-  ),
-    ```
+      ```dart
+      ElevatedButton(
+          onPressed: onPressed, 
+          child: const Text('x'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: Size(48, 48),
+          ),
+    ),
+      ```
     This way, an accessibility overlay can enforce a minimum size of a button:
-    ```json=
-    "accessibility":[
-        {
-            "type": "elevated_button",
-            "args": {
-              "style": {
-                 "minimumSize" : [48,48]
+      ```json
+      "accessibility":[
+          {
+              "type": "elevated_button",
+              "args": {
+                "style": {
+                  "minimumSize" : [48,48]
+                }
               }
-            }
-        }
-    ]
-    ```
+          }
+      ]
+      ```
     However it is crucial to keep in mind that buttons are not the only elements that are interactive. 
     
 Accessibility overlay would for sure be a step forward, but there are situations where automatic imposing of some accessibility recommendations would not be possible and human verification would be crucial. 
 
 - **Overlay parser -** Not a overlay itself, this last chance solution would be checking whether the designed layout meets accessibility requirements, not imposing them.  This should be treated as a "fun fact" and a workaround, not a definite solution.
     - Color contrast - What is necessary to find the contrast between two colored items is the tint of both child and parent widget, for entire widget. While not impossible, it would impose a requirement of iterating through all widgets and developing some contrast checking code.
-    ```dart=
-    for(widget in widgetTree){
-        var contrast = checkContrast(widget.parent, widget)
-        if(contrast> 7:1){
-            //App very accessible
-        }else if(contrast> 4.5:1){
-            //App accessible
-        }else{
-            //App not accessible
-        }
-    }
-    ```
+      ```dart
+      for(widget in widgetTree){
+          var contrast = checkContrast(widget.parent, widget)
+          if(contrast> 7:1){
+              //App very accessible
+          }else if(contrast> 4.5:1){
+              //App accessible
+          }else{
+              //App not accessible
+          }
+      }
+      ```
     - Label positioning - Label of a TextFormField should be positioned above the field, not next to it. Actually, there is no need of an artificial label at all. TextFormField has a field called `decoration` which can contain the label itself:
-    ```dart=
-    TextFormField(
-      decoration: const InputDecoration(
-        icon: Icon(Icons.person),
-        hintText: 'What do people call you?',
-        labelText: 'Name',
-      ),
-    )
-    ```
+      ```dart
+      TextFormField(
+        decoration: const InputDecoration(
+          icon: Icon(Icons.person),
+          hintText: 'What do people call you?',
+          labelText: 'Name',
+        ),
+      )
+      ```
     So it would be necessary to just check whether all the widget tree elements that are of type TextFormField contain labelText.
-    ```dart=
-    for(widget in widgetTree){
-        if(widget.isTextFormField){
-            if(widget.containsLabelText){
-                //App accessible
-            }else{
-                App not accessible
-            }
-        }
-    }
-    ```
+      ```dart
+      for(widget in widgetTree){
+          if(widget.isTextFormField){
+              if(widget.containsLabelText){
+                  //App accessible
+              }else{
+                  App not accessible
+              }
+          }
+      }
+      ```
     And the list can go on and on. Let us stop with these 2 examples as this idea is just a workaround, not a real solution.
 
 ## Accessibility overlay proposal
 Summing up the points about encoded accessibility and W3C guide, the JSON shown in this part of the article could serve as an accessibility overlay. It is important to keep in mind that many of the requirements proposed by W3C cannot be machine-imposed. A lot of them require some context to be understood, like link text or keyboard type. 
-```json=
+
+```json
 "accessibility":[
     {
         "type": "elevated_button",

@@ -23,7 +23,7 @@ A proof of concept plugin can be found [here](https://github.com/argonAUTHs/flut
 2. Run `cargo init` inside `$rust_part`. This will create `src` folder and `Cargo.toml` file.
 3. In the `src` folder there is one file: `main.rs`. It can be deleted. Create 2 new files called `lib.rs` and `api.rs`. The first one will call all modules from rust project while the other is a module containing all functions that should be bridged to dart.
 4. Modify the `api.rs` file and add your library functionality. In this case it will be a simple hello world string function:
-    ```
+    ```rust
     pub fn hello() -> String {
         return "Hello World!".to_string();
     }
@@ -33,7 +33,7 @@ A proof of concept plugin can be found [here](https://github.com/argonAUTHs/flut
 pub mod api;
 ```
 6. Add the following lines to `Cargo.toml` (Notice: The lib lines may change depending on the platform you are building for. ):
-    ```
+    ```toml
     [lib]
     crate-type = ["staticlib", "cdylib"]
 
@@ -41,7 +41,7 @@ pub mod api;
     flutter_rust_bridge = "1"
     ```
 7. Run the following commands in `$rust_part`:
-    ```
+    ```bash
     cargo install flutter_rust_bridge_codegen
     flutter pub add --dev ffigen
     flutter pub add ffi
@@ -67,7 +67,7 @@ Actually, the location of `bridge_generated.h` is not that important, as it is c
 You may also move the `.a` file to the `ios` folder, this way there is no need for the symlink as the library is directly accessible.
 6. Then append the contents of `bridge_generated.h` to `/ios/Classes/$Plugin.h`: `cat ios/bridge_generated.h >> ios/Classes/$Plugin.h`
 7. Then add in `ios/Classes/.swift` file dummy method: 
-    ```
+    ```swift
     public func dummyMethodToEnforceBundling() {
       // This will never be executed
       dummy_method_to_enforce_bundling();
@@ -81,7 +81,7 @@ You may also move the `.a` file to the `ios` folder, this way there is no need f
 ```
 9. Next, remember to set the strip style to non global symbols on both the `.xcodeproj` in `$rust_part` and `.xcodeworkspace` in example (if you want to run the example).
 11. Remember to edit `pubspec.yaml` file so it has following structure:
-    ```
+    ```yaml
     plugin:
         platforms:
           android:
@@ -104,7 +104,7 @@ This tutorial is made for a multiplatform project and it assumes the iOS support
 **Warning:** This command will create all files that are automatically created when making new Flutter project. If for some reason you deleted some of them, you might need to get rid of them again.
 
 2. To link your Rust library with MacOS, `.dylib` file type is necessary. To generate it, edit `Cargo.toml`, so that it has following structure:
-    ```
+    ```toml
     [lib]
     crate-type = ["dylib"]
     ```
@@ -112,7 +112,7 @@ Then run `cargo build` in your `$crate` directory. Remember to use the flag `--r
 
 3. Move your `.dylib` file to `macos` folder in your project. 
 4. In `.swift` file in `macos/Classes` add the dummy method (more about it in `flutter_rust_bridge` documentation):
-    ```
+    ```swift
     public func dummyMethodToEnforceBundling() {
         // This will never be executed
         dummy_method_to_enforce_bundling()
@@ -120,7 +120,7 @@ Then run `cargo build` in your `$crate` directory. Remember to use the flag `--r
     ```
 
 5. Don't forget to edit `pubspec.yaml` and add the MacOS support:
-    ```
+    ```yaml
     plugin:
         platforms:
           macos: 

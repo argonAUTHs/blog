@@ -1,3 +1,26 @@
+pre {
+  font-family: monaco,Consolas,Lucida Console,monospace; 
+  font-size: 0.9em;
+}
+
+code {
+  background-color: #282828;
+  font-family: monaco,Consolas,Lucida Console,monospace; 
+  padding: 1px;
+  font-size: 0.9em;
+  color: #b3b3b3;
+}
+
+table.rouge-table {
+  td:first-child {
+    border-right: 1px solid grey;
+    color: grey;
+  }
+  td:nth-child(2) {
+    padding-left: 10px;
+  }
+}
+
 .highlight .hll { background-color: #ffc; }
 .highlight .c { color: #999; } /* Comment */
 .highlight .err { color: #a00; background-color: #faa } /* Error */
