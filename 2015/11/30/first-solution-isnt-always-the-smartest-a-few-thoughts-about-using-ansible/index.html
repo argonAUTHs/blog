@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      First solution isn't always the smartest – a few thoughts about using Ansible &middot; 
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/bootstrap.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/syntax.css">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" sizes="144x144" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/atom+xml" title="" href="/atom.xml">
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home" class='logo'></a>
+          <nav class="pull toggle-content">
+            <ul class="top-nav">
+              
+              <li><h2><a href="/archive">Archive</a></h2></li>
+              
+              <li><h2><a href="/atom.xml">Feed</a></h2></li>
+              
+            </ul>
+          </nav>
+          <div class="text-right navicon">
+            <a id="nav-toggle" class="nav_slide_button" href="#"><span></span></a>
+          </div>
+        </h3>
+      </header>
+
+      <main>
+        
+<p>
+<i class="glyphicon glyphicon-tags" style="padding-right: .5rem;"></i>
+
+<a href="/tag/Ansible" title="View posts tagged with &quot;Ansible&quot;"><u>Ansible</u></a>, 
+
+<a href="/tag/Configuration Management" title="View posts tagged with &quot;Configuration Management&quot;"><u>Configuration Management</u></a>
+
+</p>
+
+
+<article class="post">
+  <h1 class="post-title">First solution isn't always the smartest – a few thoughts about using Ansible</h1>
+  <time datetime="2015-11-30T11:23:14+00:00" class="post-date">30 Nov 2015</time>
+  
+  <p></p>
+  
+  <p>Basically, this post is a continuation of <a href="2015/10/09/why-we-dont-focus-on-testing-ansible-roles-extensively/">Why we don’t focus on testing Ansible roles extensively</a> and essentially touches <a href="http://www.ansible.com/">Ansible</a> and expands, among other things, a few thoughts about using this tool within a CI environment.</p>
+
+<h2 id="the-problem-execution-time-of-ansible-playbook-takes-too-long">The problem: execution time of Ansible playbook takes too long</h2>
+
+<h4 id="the-context">The context</h4>
+<p>Having a set of VM’s and several roles to execute, I’ve started to think how to shorten the execution time within the cluster.</p>
+
+<h4 id="first-solution--extract-and-execute-only-the-code-thats-been-changed">First solution – extract and execute only the code that’s been changed</h4>
+<p>As we use here a CI for Ansible, the first idea was to execute only the role that’s been changed. It sounds quite reasonable, because only concrete piece of playbook lifecycle is executed, without touching all the rest, unchanged. However, it works smootly until it concerns internal roles.
+Let me explain the current solution for staging environment. What’s executed after a change is being pushed into repository, is distinguished with a piece of Bash script:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">tags</span><span class="o">=</span><span class="sb">`</span>git show <span class="nt">--pretty</span><span class="o">=</span><span class="s2">"format:"</span> <span class="nt">--name-only</span> <span class="nv">$GIT_COMMIT</span> | <span class="nb">grep</span> <span class="nt">-v</span> <span class="s1">'roles/requirements.yml'</span> | <span class="nb">grep</span> <span class="nt">-e</span> <span class="s1">'roles\/'</span> | <span class="nb">awk</span> <span class="nt">-F</span> <span class="s2">"/"</span> <span class="s1">'{print $2}'</span> | <span class="nb">paste</span> <span class="nt">-sd</span> <span class="s2">","</span> -<span class="sb">`</span>
+<span class="k">if</span> <span class="o">!</span> <span class="o">[</span> <span class="nt">-z</span> <span class="s2">"</span><span class="nv">$tags</span><span class="s2">"</span> <span class="o">]</span><span class="p">;</span> <span class="k">then
+  </span><span class="nb">echo</span> <span class="s2">"Running for tags: </span><span class="nv">$tags</span><span class="s2">"</span>
+  ansible-playbook <span class="nt">--tags</span><span class="o">=</span><span class="s2">"</span><span class="nv">$tags</span><span class="s2">"</span> <span class="nt">-i</span> staging_inv site.yml
+<span class="k">else</span>
+  <span class="c"># Execute all stuff</span>
+  ansible-playbook <span class="nt">-i</span> staging_inv site.yml
+<span class="k">fi</span></code></pre></figure>
+
+<p>In particular, it extracts what’s been changed from a Git tree and enforces to run build for concrete tags. These tags match role names, e.g. if any file of role <em>common</em> has been changed, build executes only for role <em>common</em>. Unfortunately, it shines until you add an external role. Given that, lets say the main directory playbook structure looks like:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>tree ./ <span class="nt">-L</span>  1
+├── ansible.cfg
+├── files
+├── group_vars
+├── host_vars
+├── roles
+│   ├── ...
+│   ├── requirements.yml
+├── site.yml
+└── staging_inv</code></pre></figure>
+
+<p>When you add an external role, what you do – in most cases – is extending <em>*vars</em> with some configuration variables related to the role and that’s all. It provides great flexibility for including additional roles, however it also reduces the possibility of extraction only certain roles to execute (based on the piece of code showed above). For such <em>nginx</em> external role example, you’d only need to add some variables related to the role so the above extraction script wouldn’t match any code from within roles directory and hence, peform all tasks defined within a playbook.</p>
+
+<h4 id="second-solution--build-a-wrapper-role">Second solution – build a wrapper role</h4>
+
+<p>Any Ansible role may depend on any other role, where dependent roles are executed first. Role dependencies are given within host role <em>meta/main.yml</em>:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="na">dependencies</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">ansible-role-nginx</span></code></pre></figure>
+
+<p>The host role (one that’s having dependencies) would provide all essential variables for the dependent roles and it plays nicely. Basically, the nginx wrapper role looks like:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>tree ./roles/nginx/ <span class="nt">-L</span> 1
+├── defaults
+├── meta
+├── tasks
+└── vars</code></pre></figure>
+
+<p>where <em>vars</em> provide common variables for <em>ansible-role-nginx</em> role. The <em>common</em> word is on purpose, because what if you’d like to deliver configuration for several nginx instances, where each instance differs slightly (e.g. is having different SSL cert)? The whole wrapper role plan crashes, because it needs to be distinguished somehow what plays where, so the solution would likely to use either <em>group</em> or <em>host_ vars</em>, whereas the extraction script doesn’t know anything about these directories (because they reside within playbook main dir).</p>
+
+<p>However, there’s a light for such approach, I mean using wrapper roles:</p>
+
+<ol>
+  <li><em>nginx</em> role–case is quite unusual. In most cases it will be sufficient to use wrapper role <em>vars</em> and define essential variables there.</li>
+  <li>External role common code has his own isolated environment with the ability to test it, using the above Bash script.</li>
+  <li>Wrapper role may include additional tasks and these are applied right after all dependent roles are applied. However, to apply pre–role tasks, different approach is needed.</li>
+</ol>
+
+<h2 id="the-problem--applying-prerole-tasks-for-certain-role">The problem – applying pre–role tasks for certain role</h2>
+
+<h4 id="the-context-1">The context</h4>
+
+<p>The current design of applying pre or post tasks of certain roles is limited to concrete <a href="http://docs.ansible.com/ansible/playbooks_roles.html#roles">pre/post tasks</a> defined within a playbook. Such approach, however, implies that playbook becomes both, the declaration and definition of roles and tasks, which sounds like a straight way of having a speghetti code.</p>
+
+<h4 id="everything-should-be-roleized">Everything should be roleized</h4>
+
+<p>Because it keeps your code clean and readable, no matter whether it’s a bunch of tasks or just one that creates a directory. Be consistent in what you do and that will cause profits. Instead of adding <em>pre_tasks</em> to your playbook, create another role, e.g. <em>pre-nginx</em> that simply creates cache directory or whatever is needed before role is executed.</p>
+
+<h2 id="the-problem--complex-role-configuration-and-staying-dry">The problem – complex role configuration and staying DRY</h2>
+
+<h4 id="the-context-2">The context</h4>
+
+<p>Lets say you have <a href="https://github.com/jdauphant/ansible-role-nginx">nginx</a> role on board and it manages many Nginx instances. Some of them need various SSL certs or are working with different application servers. How to manage that and stay DRY?</p>
+
+<h4 id="cheat-with-jinja2-features">Cheat with Jinja2 features</h4>
+
+<p>Ansible uses YAML language for tasks definition and despite its simplicity, it has some limitations (e.g. config inheritance). Here comes <a href="http://docs.ansible.com/ansible/playbooks_filters.html">Jinja2</a> template language that would help in such cases. Let me explain it on an example, e.g. with this <a href="https://github.com/jdauphant/ansible-role-nginx">nginx</a> role. The role is used upon the wrapper role pattern described above and contains:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="c1"># meta/main.yml</span>
+<span class="nn">---</span>
+<span class="na">dependencies</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">ansible-role-nginx</span>
+
+<span class="c1"># vars/main.yml</span>
+<span class="nn">---</span>
+
+<span class="na">common_conf</span><span class="pi">:</span> <span class="pi">|</span>
+  <span class="s">index index.html;</span>
+
+  <span class="s">location /favicon.ico {</span>
+    <span class="s">return 204;</span>
+    <span class="s">access_log     off;</span>
+    <span class="s">log_not_found  off;</span>
+  <span class="s">}</span>
+
+  <span class="s">location /robots.txt {</span>
+    <span class="s">alias ;</span>
+  <span class="s">}</span>
+
+  <span class="s">...</span>
+
+<span class="na">nginx_configs</span><span class="pi">:</span>
+  <span class="na">ssl</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">ssl_certificate_key /cert.key</span>
+    <span class="pi">-</span> <span class="s">ssl_certificate     /cert.pem</span>
+  <span class="na">upstream</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">upstream</span> 
+
+<span class="na">nginx_http_params</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">proxy_cache_path  /var/www/nginx-cache/  levels=1:2 keys_zone=one:10m inactive=7d  max_size=200m</span>
+  <span class="pi">-</span> <span class="s">proxy_temp_path   /var/www/nginx-tmp/</span></code></pre></figure>
+
+<p>Then, for a concrete host or group vars of your inventory, specify final configuration. Lets say you have <em>foo</em> app and you’d like to provide config for <em>bar</em> host that reside within your inventory file. Given that:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="c1"># host_vars/bar/nginx.yml</span>
+<span class="nn">---</span>
+<span class="na">root_dir</span><span class="pi">:</span> <span class="s">/var/www/foo/public/</span>
+<span class="na">location_app</span><span class="pi">:</span> <span class="pi">|</span>
+  <span class="s">proxy_pass http://some_cluster;</span>
+  <span class="s">proxy_set_header X-Accel-Buffering no;</span>
+  <span class="s">...</span>
+
+
+<span class="na">location_app_https</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">location_app</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="pi">-</span> <span class="s">proxy_set_header X-Forwarded-Proto https;</span>
+
+<span class="na">app_common_conf</span><span class="pi">:</span> <span class="pi">|</span>
+  <span class="s">server_name bar.example.com;</span>
+  <span class="s">root {{ root_dir }};</span>
+
+  <span class="s">location / {</span>
+    <span class="s">try_files $uri $uri/index.html $uri.html @app;</span>
+  <span class="s">}</span>
+<span class="na">nginx_sites</span><span class="pi">:</span>
+  <span class="na">status</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">listen </span><span class="m">80</span>
+    <span class="pi">-</span> <span class="s">server_name 127.0.0.1</span>
+    <span class="pi">-</span> <span class="s">location /status { allow 127.0.0.1; deny all; stub_status on; }</span>
+  <span class="na">app</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">listen </span><span class="m">80</span>
+    <span class="pi">-</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">common_conf</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="pi">-</span> <span class="s2">"</span><span class="s">{{app_common_conf}}"</span>
+    <span class="pi">-</span> <span class="pi">|</span>
+      <span class="s">location @app {</span>
+        <span class="s">{{ location_app }}</span>
+      <span class="s">}</span>
+  <span class="na">app_ssl</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">listen 443 ssl</span>
+    <span class="pi">-</span> <span class="s2">"</span><span class="s">{{common_conf}}"</span>
+    <span class="pi">-</span> <span class="s2">"</span><span class="s">{{app_common_conf}}"</span>
+    <span class="pi">-</span> <span class="pi">|</span>
+      <span class="s">location @app {</span>
+        <span class="s">{{ location_app_https | join(" ") }}</span>
+      <span class="s">}</span>
+
+
+<span class="na">upstream</span><span class="pi">:</span>
+  <span class="s">some_cluster { server unix:/var/www/foo/tmp/sockets/unicorn.sock fail_timeout=0; }</span></code></pre></figure>
+
+<p>And certs file, encrypted with <em>ansible-vault</em> is given as:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="c1"># host_vars/bar/cert.yml</span>
+<span class="nn">---</span>
+<span class="na">ssl_certs_privkey</span><span class="pi">:</span> <span class="pi">|</span>
+  <span class="s">-----BEGIN CERTIFICATE-----</span>
+  <span class="s">...</span>
+  <span class="s">-----END CERTIFICATE-----</span>
+
+<span class="na">ssl_certs_cert</span><span class="pi">:</span> <span class="pi">|</span>
+  <span class="s">-----BEGIN PRIVATE KEY-----</span>
+  <span class="s">...</span>
+  <span class="s">-----END PRIVATE KEY-----</span></code></pre></figure>
+
+<p>The <a href="https://github.com/jdauphant/ansible-role-nginx">nginx</a> role doesn’t install SSL certs itself so it’s up to you how and where you’d like to put them. However, it might be simply achieved with these tasks, applied before nginx role:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Ensure SSL folder exist</span>
+  <span class="na">file</span><span class="pi">:</span> <span class="pi">&gt;</span>
+    <span class="s">path={{ssl_certs_path}}</span>
+    <span class="s">state=directory</span>
+    <span class="s">owner="{{ssl_certs_path_owner}}"</span>
+    <span class="s">group="{{ssl_certs_path_group}}"</span>
+    <span class="s">mode=700</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Provide nginx SSL cert.pem</span>
+  <span class="na">copy</span><span class="pi">:</span> <span class="pi">&gt;</span>
+    <span class="s">content="{{ ssl_certs_privkey }}"</span>
+    <span class="s">dest={{ssl_certs_path}}/cert.pem</span>
+    <span class="s">owner="{{ssl_certs_path_owner}}"</span>
+    <span class="s">group="{{ssl_certs_path_group}}"</span>
+    <span class="s">mode=700</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Provide nginx SSL cert.key</span>
+  <span class="na">copy</span><span class="pi">:</span> <span class="pi">&gt;</span>
+    <span class="s">content="{{ ssl_certs_cert }}"</span>
+    <span class="s">dest={{ssl_certs_path}}/cert.key</span>
+    <span class="s">owner="{{ssl_certs_path_owner}}"</span>
+    <span class="s">group="{{ssl_certs_path_group}}"</span>
+    <span class="s">mode=700</span></code></pre></figure>
+
+<p>Note the difference between <em>&gt;</em> and <em>|</em> in YAML. The former is the folded style and means that any newline in YAML will be replaced with space character, whereas the latter preserves newline character.</p>
+
+<p><a href="http://docs.ansible.com/ansible/playbooks_filters.html">Jinja2</a> templates in conjunction of YAML features, provide great flexibility in config definition. However, as of Ansible 2.0, it’s likely that it will change slightly, because it will be possible to use Jinja2 <a href="http://docs.ansible.com/ansible/playbooks_filters.html#combining-hashes-dictionaries">combine</a> feature for merging hashes.</p>
+
+
+</article>
+
+<aside class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+    <li>
+      <h3>
+        <a href="/2023/01/29/Exploring-the-Overlays-Capture-Architecture/">
+          Exploring the Overlays Capture Architecture: Managing Data Captured from Temperature Sensors
+          <small><time datetime="2023-01-29T17:27:05+00:00">29 Jan 2023</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2022/11/21/mobile-app-content-accessibility/">
+          Mobile app content accessibility
+          <small><time datetime="2022-11-21T17:27:05+00:00">21 Nov 2022</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2022/09/26/flutter-and-rust-combined-creating-a-plugin-to-support-various-operating-systems/">
+          Flutter and Rust combined. Creating a plugin to support various operating systems
+          <small><time datetime="2022-09-26T17:27:05+00:00">26 Sep 2022</time></small>
+        </a>
+      </h3>
+    </li>
+    
+  </ul>
+</aside>
+
+
+
+<!-- Add Disqus comments. -->
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'opensoftwareblog';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+      </main>
+
+      <footer class="footer">
+        <small>
+          ArgonAUTHs <time datetime="2023-01-29T22:03:57+00:00">2023</time>. EUPL 1.2.
+        </small>
+      </footer>
+    </div>
+    <script>
+      var show = function (elem) {
+        elem.classList.add('is-visible');
+      };
+
+      // Hide an element
+      var hide = function (elem) {
+        elem.classList.remove('is-visible');
+      };
+
+      // Toggle element visibility
+      var toggle = function (elem) {
+        elem.classList.toggle('is-visible');
+      };
+
+      document.querySelector("#nav-toggle").addEventListener("click", function(event) {
+        var content = document.querySelector(".pull");
+        if (!content) return;
+
+        toggle(content);
+      });
+
+    </script>
+  </body>
+</html>

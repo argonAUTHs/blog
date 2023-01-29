@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      DevOps in small companies – part I – configuration management &middot; 
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/bootstrap.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/syntax.css">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" sizes="144x144" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/atom+xml" title="" href="/atom.xml">
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home" class='logo'></a>
+          <nav class="pull toggle-content">
+            <ul class="top-nav">
+              
+              <li><h2><a href="/archive">Archive</a></h2></li>
+              
+              <li><h2><a href="/atom.xml">Feed</a></h2></li>
+              
+            </ul>
+          </nav>
+          <div class="text-right navicon">
+            <a id="nav-toggle" class="nav_slide_button" href="#"><span></span></a>
+          </div>
+        </h3>
+      </header>
+
+      <main>
+        
+<p>
+<i class="glyphicon glyphicon-tags" style="padding-right: .5rem;"></i>
+
+<a href="/tag/DevOps" title="View posts tagged with &quot;DevOps&quot;"><u>DevOps</u></a>, 
+
+<a href="/tag/Configuration management" title="View posts tagged with &quot;Configuration management&quot;"><u>Configuration management</u></a>, 
+
+<a href="/tag/Puppet" title="View posts tagged with &quot;Puppet&quot;"><u>Puppet</u></a>, 
+
+<a href="/tag/Ansible" title="View posts tagged with &quot;Ansible&quot;"><u>Ansible</u></a>
+
+</p>
+
+
+<article class="post">
+  <h1 class="post-title">DevOps in small companies – part I – configuration management</h1>
+  <time datetime="2015-09-11T17:41:09+00:00" class="post-date">11 Sep 2015</time>
+  
+  <p></p>
+  
+  <p>So you are a team of 3–5 and run a small company. You are happy with that and so we are. As we are commited to our deliverables, we need to do our job smoothly. We need appropriate tools for the right time to let the business run (and to make money, right?). Altough our teams are small and resources are limited, we still can improve our velocity. It’s actually inevitable if you want to stay on the market. Each such investment implies a non-zero cost, because of the learning curve etc. Thus it’s essential to invest in something valuable, that would keep us on the front – improve our throughput.</p>
+
+<p>This set of posts aims to be somewhat a guideline of how to improve deliverables, by applying DevOps culture in a small company, or in particular – the automation.</p>
+
+<h2 id="overview-of-current-state">Overview of current state</h2>
+
+<p>Did you hear about <a href="http://www.joelonsoftware.com/articles/fog0000000043.html">the Joel test</a>? It’s quite old from the IT point of view, but still valid. As a matter of fact, it’s not an issue if you didn’t, because it’s somewhat a quality measurement, however very valuable, because it gives an overview of the current company state. So, how much points are you compliant with? Those twelve questions are the validator to help your business win so go and find them useful. Likewise, there are various aspects related to those questions and I’m going to touch some of them. In this case I mean managing the configuration.</p>
+
+<h2 id="where-configuration-meets-automation">Where configuration meets automation</h2>
+
+<p>Well, automation of provisioning the environment is not a new topic, because people are doing it for years or perhaps even decades. Bash, Perl or Python were predecessors, but in the last few years the topic evolved vast. Actually, you’re already at the gates of the Kingdom of Happiness even if you’re doing it with simple Bash script, e.g. to install Nginx, configure firewall or whatever is needed to deliver your app. It is, because you have some configuration process that let’s you provision the environment (or part of it) with reliability in any point of time.</p>
+
+<p>As the above process remains valid, today we have some nicer toys to play with configuration, e.g. Chef, Puppet, Ansible, Salt or even Packer (it slightly <a href="https://groups.google.com/forum/#!msg/packer-tool/4lB4OqhILF8/NPoMYeew0sEJ">differs</a> from the others). These will help your company, because they push orchestration on completely new level of abstraction. OK, You’d say:</p>
+
+<p>– but I need only few tools to run my app – why should I care?</p>
+
+<p>– read below.</p>
+
+<p><img src="/static/img/20150911/mortal_kombat.jpg" alt="" /></p>
+
+<h2 id="the-kittens-world">The Kittens world</h2>
+
+<blockquote>
+  <p>Kittens are pets. Each cute little kitten has a name, get stroked every day, have special food and needs including “cuddles”. Without constant attention your kittens will die. Common types of “kittens” are MSSQL databases, Sharepoint, Legacy apps and all Unix systems. Kitten class computing is expensive, stressful and time consuming.</p>
+</blockquote>
+
+<p>Unfortunately, often these <a href="http://etherealmind.com/cattle-vs-kittens-on-cloud-platforms-no-one-hears-the-kittens-dying/">Kittens</a> are our production environments, which in case of any failure, results in a huge blow–up. To give an example, imagine you’re doing release upgrade on your Ubuntu LTS or just PostgreSQL version upgrade. Sure, you can put your app into maintenance mode and throw away all the users for a half day, but that’s not the case these days. Some call this approach the <a href="https://www.thoughtworks.com/insights/blog/moving-to-phoenix-server-pattern-introduction">Phoenix Server Pattern</a> and some the <a href="http://chadfowler.com/blog/2013/06/23/immutable-deployments/">Immutable Deployments</a>. The point is to deliver profits with immutability. Instead of doing Ubuntu release upgrade, throw it away and provision new VM with latest release.</p>
+
+<h2 id="human-failure">Human failure</h2>
+
+<p>It’s in our nature to make mistakes, however we can minimize them. Any process that brings some automation, also minimizes failure probability. Despite it’s an investment, it’s profitable.</p>
+
+<p>In the Rubyist world, there’s a tool called Bundler to manage dependencies. Bundler ensures that dependencies are consistent according to app needs. OSS world changes often and not always fluently to migrate from version X to Y. You need to manage these dependencies, e.g. to ensure version 1.2.3 of some dependency and 2.1.1 of some other. Bundler gives you extremely powerful engine to manage them and so CM tools give you the power to manage your environments. You always get the desired state.</p>
+
+<h2 id="build-your-environment">Build your environment</h2>
+
+<p>CM tools are somewhat like build tools, e.g. Maven or Gradle, but instead of getting the result as file or set of files, you get freshly baked environment. Baked according to the rules from Cookbooks (Chef), Manifests (Puppet) or Playbooks (Ansible).</p>
+
+<p>Any of these tools also offer extra level of abstraction to ensure maximum flexibility, but yet, organized in some manner. Having a set of VM’s, you can tell them to first configure some common context, e.g. a firewall or SSH, then a web–server, database, proxy or whatever is needed. For any given set of VM’s, you get <em>the desired state</em>, with open ports 22 and 5432, but closed everything else. Then for any subset of these VM’s, installed web–server or database. Any defined rule is applied where it’s desired – for a node (VM), set of nodes or even set of subset of nodes. It’s all up to you how you manage it. There’re some common patterns, e.g define roles (nodes), which include profiles (a set of rules to configure given tool, e.g. nginx). For Puppet it’s <a href="https://techpunch.co.uk/development/how-to-build-a-puppet-repo-using-r10k-with-roles-and-profiles">roles–profiles</a>, whereas with Ansible it’s somewhat enforced by default.</p>
+
+<p>It’s also worth noting that whatever rule you apply with desired CM tool, the applied rule is idempotent. It means that it will not apply firewall rules twice or more and mess with your setup, no matter how many times you’d apply that rule.</p>
+
+<h2 id="keep-calm-and-scale">Keep calm and scale</h2>
+
+<p>To some extent, it’s just fine to scale vertically, however the cons are that it requires extra machine reboot and sometimes might be just a waste of resources utilization. On the other hand, to scale horizontally, it’s essential to have new environment(s) prepared to the desired state. Sure, you’d use <a href="http://www.agilesysadmin.net/imaging-or-configuration-management">the golden image</a> approach and scale just fine, but well, these days have passed. Just imagine a new library installation with golden image approach and you’re off of this idea. CM tools give us much more flexibility to handle such cases.</p>
+
+<h2 id="where-shall-i-start">Where shall I start?</h2>
+
+<p>Before you’ll start with anything, <a href="https://www.scriptrock.com/automation-enterprise-devops-doing-it-wrong">these below</a> are your key points:</p>
+
+<p><img src="/static/img/20150911/drawing.png" alt="" /></p>
+
+<p>In other words, gather requirements first. See how the business works and understand it, deeply. Now, blame me, but for me validation is just fine even if you do peer review as the underlying aim is not to overload ourselves. Then, finally, start playing with your desired tool. If you don’t have any, yet, go and find whatever would be useful for you. I’ve used Puppet for some time, but switched to Ansible then, because of simplicity. Puppet has his own Ruby–based DSL to write manifests and is built upon master–agent pattern in its basis. However, it implies that each node needs Puppet–agent installed and set up SSL certs so that master and agents can talk to each other. For better node management, Puppet has some third party tools to better utilize his capabilities, e.g. Hiera to manage global environment config (e.g. to apply Ruby version 2.1 on a subset of nodes), or R10K to deal with any sort of environments (e.g. dev or production). There’s one more caveat to Puppet, quite common actually – because of Puppet design, if there isn’t explicit rules (resources) hierarchy, Puppet would apply them in a random order, which may cause unexpected results. In order to prevent it, Puppet DSL implements dedicated ordering by setting <a href="https://docs.puppetlabs.com/puppet/3.8/reference/lang_relationships.html">relationships</a> between resources.</p>
+
+<p>Ansible Playbooks on the other hand are YAML–based and top–bottom applied rules. It means first rule in Playbook is applied first, then second, then third etc. Besides, Ansible doesn’t implement master–agent architecture. Everything you need to run it on nodes is Python installed with <code class="language-plaintext highlighter-rouge">python-simplejson</code> library. I claim Ansible has also shorter learning curve according to Puppet, more modules supported by the Core team or just better docs. I’ve prepared simple Puppet vs. Ansible <a href="https://github.com/blelump/garage">comparison</a> (it needs Vagrant and VirtualBox) that simply configures SSH and firewall so you can play with both.</p>
+
+<p><img src="/static/img/20150911/mortal_kombat2.png" alt="" /></p>
+
+<h2 id="kill-your-kitten-and-see-what-happen">Kill your Kitten and see what happen</h2>
+
+<p>The idea behind this post was to unveil that CM matters. Even if you’re tiny player on the market and spinning new apache installation twice a year or doing whatever library upgrade ever less once in a while, it might be a valuable investment. Just after a few years, maintaining such Kitten becomes a pain, because no one ever remember what was there and what for. Keep your environments lean and auto–configurable and you’ll notice the profit.</p>
+
+
+</article>
+
+<aside class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+    <li>
+      <h3>
+        <a href="/2023/01/29/Exploring-the-Overlays-Capture-Architecture/">
+          Exploring the Overlays Capture Architecture: Managing Data Captured from Temperature Sensors
+          <small><time datetime="2023-01-29T17:27:05+00:00">29 Jan 2023</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2022/11/21/mobile-app-content-accessibility/">
+          Mobile app content accessibility
+          <small><time datetime="2022-11-21T17:27:05+00:00">21 Nov 2022</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2022/09/26/flutter-and-rust-combined-creating-a-plugin-to-support-various-operating-systems/">
+          Flutter and Rust combined. Creating a plugin to support various operating systems
+          <small><time datetime="2022-09-26T17:27:05+00:00">26 Sep 2022</time></small>
+        </a>
+      </h3>
+    </li>
+    
+  </ul>
+</aside>
+
+
+
+<!-- Add Disqus comments. -->
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'opensoftwareblog';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+      </main>
+
+      <footer class="footer">
+        <small>
+          ArgonAUTHs <time datetime="2023-01-29T22:03:57+00:00">2023</time>. EUPL 1.2.
+        </small>
+      </footer>
+    </div>
+    <script>
+      var show = function (elem) {
+        elem.classList.add('is-visible');
+      };
+
+      // Hide an element
+      var hide = function (elem) {
+        elem.classList.remove('is-visible');
+      };
+
+      // Toggle element visibility
+      var toggle = function (elem) {
+        elem.classList.toggle('is-visible');
+      };
+
+      document.querySelector("#nav-toggle").addEventListener("click", function(event) {
+        var content = document.querySelector(".pull");
+        if (!content) return;
+
+        toggle(content);
+      });
+
+    </script>
+  </body>
+</html>

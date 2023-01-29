@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      Exploring the Overlays Capture Architecture: Managing Data Captured from Temperature Sensors &middot; 
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/bootstrap.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/syntax.css">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" sizes="144x144" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/atom+xml" title="" href="/atom.xml">
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home" class='logo'></a>
+          <nav class="pull toggle-content">
+            <ul class="top-nav">
+              
+              <li><h2><a href="/archive">Archive</a></h2></li>
+              
+              <li><h2><a href="/atom.xml">Feed</a></h2></li>
+              
+            </ul>
+          </nav>
+          <div class="text-right navicon">
+            <a id="nav-toggle" class="nav_slide_button" href="#"><span></span></a>
+          </div>
+        </h3>
+      </header>
+
+      <main>
+        
+<p>
+<i class="glyphicon glyphicon-tags" style="padding-right: .5rem;"></i>
+
+<a href="/tag/oca" title="View posts tagged with &quot;oca&quot;"><u>oca</u></a>
+
+</p>
+
+
+<article class="post">
+  <h1 class="post-title">Exploring the Overlays Capture Architecture: Managing Data Captured from Temperature Sensors</h1>
+  <time datetime="2023-01-29T17:27:05+00:00" class="post-date">29 Jan 2023</time>
+  
+  <p class="post-author">
+  by
+  
+  Marcin Olichwiruk
+  
+  </p>
+  
+  <p>This article will look at how to parse OCA (Overlays Capture Architecture) from an Excel template and convert it into OCA Bundle, a zip archive file. We will also describe the files included in the zip archive and show how to read the meta.json file. Additionally, we will demonstrate how to verify the integrity of the OCA Bundle and validate the captured data. Finally, we will look at transforming the units of captured data from Celsius to Kelvin. By the end of this article, you will have a better understanding of the OCA system and how to work with OCA data.</p>
+
+<h2 id="prerequisites">Prerequisites</h2>
+<p>To follow described OCA exploration, you will need the OCA Bundle file. To get one, you can:</p>
+<ul>
+  <li>generate it from the XLS template. To do this, download the prepared <a href="https://data-vault.argo.colossi.network/api/v1/files/EsWbDUorzNF1wv2cryD_fToNDhax7APLVN3Q2EAxeqRU">oca_bundle.xlsx</a> file with defined OCA for capturing data from a temperature sensor. Then, the <a href="https://oca.colossi.network/ecosystem/oca-parser.html">OCA Parser</a> is used to convert the XLS file into OCA Bundle as a zip archive. The command to do this is:
+ <code class="language-plaintext highlighter-rouge">./parser parse oca -p ./oca_bundle.xlsx --zip</code></li>
+  <li><a href="https://data-vault.argo.colossi.network/api/v1/files/EukCvvhAim2elMtOMMIs3bwPf4fbvQzZswl3TyEGaNrA">download</a> pre-generated OCA Bundle file directly</li>
+</ul>
+
+<p>In either case, once you have obtained an OCA Bundle, you can begin exploring the structure and contents of the bundle and working with the data contained in it.</p>
+
+<h2 id="under-the-hood">Under the hood</h2>
+<p>Let’s see what the generated zip archive contains:
+<code class="language-plaintext highlighter-rouge">unzip -l oca_bundle.zip</code>
+This will produce output similar to the following:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="rouge-code"><pre>Archive:  oca_bundle.zip
+  Length      Name
+<span class="nt">---------</span>   <span class="nt">----</span>
+      190   EmL-JD22a1RywPXzzZLAEOxR8NHSi-04pQnOhNwHG7sg.json
+      277   EmYQZgAnoE_AIsOiZHL17jw7KGnYgY1pPRFfSUnVYUj0.json
+      213   EATuKGoJosYKLyLvdNBXpFM2YeuKuzvthOHu08whWWmA.json
+      275   meta.json
+<span class="nt">---------</span>   <span class="nt">-------</span>
+      955   4 files
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>The zip archive contains several JSON-formatted files, including overlays and capture base files, that comprise the OCA Bundle. Furthermore, there is a <code class="language-plaintext highlighter-rouge">meta.json</code> file, a JSON-formatted file containing information about the other files in the zip archive. This file can be used to navigate through the OCA Bundle and access the overlays and other data collected in the archive.</p>
+
+<h2 id="reading-the-metajson-file">Reading the meta.json file</h2>
+<p><code class="language-plaintext highlighter-rouge">cat meta.json</code> will produce the following output:</p>
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="rouge-code"><pre><span class="p">{</span><span class="w">
+  </span><span class="nl">"files"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"EmL-JD22a1RywPXzzZLAEOxR8NHSi-04pQnOhNwHG7sg"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"character_encoding"</span><span class="p">:</span><span class="w"> </span><span class="s2">"EmYQZgAnoE_AIsOiZHL17jw7KGnYgY1pPRFfSUnVYUj0"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"EATuKGoJosYKLyLvdNBXpFM2YeuKuzvthOHu08whWWmA"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"root"</span><span class="p">:</span><span class="w"> </span><span class="s2">"EmL-JD22a1RywPXzzZLAEOxR8NHSi-04pQnOhNwHG7sg"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></pre></td></tr></tbody></table></code></pre></div></div>
+<p>The <code class="language-plaintext highlighter-rouge">files</code> attribute is a JSON object that maps the names of the overlays, bounded to capture base defined by a unique identifier (SAI) as key, and files to the SAI of the file within the OCA Bundle.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">root</code> value references the top-level <code class="language-plaintext highlighter-rouge">capture_base</code> in the OCA Bundle. This <code class="language-plaintext highlighter-rouge">capture_base</code> is the starting point for traversing OCA when it contains attributes that refer to other OCAs, but it’s not covered in this article. If you are interested in investigating this topic further, you can read more about <a href="https://oca.colossi.network/specification/#attribute-type">reference attribute type</a> in the OCA documentation.</p>
+
+<h2 id="verify-oca-bundle-integrity">Verify OCA Bundle Integrity</h2>
+<p>The following code examples demonstrate how to verify the integrity of an OCA Bundle, a zip archive containing data captured by the Overlays Capture Architecture (OCA) system.</p>
+
+<p>JavaScript:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="rouge-code"><pre><span class="k">import</span> <span class="p">{</span> <span class="nx">Validator</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">oca.js</span><span class="dl">'</span>
+<span class="k">import</span> <span class="p">{</span> <span class="nx">resolveFromZip</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">oca.js-form-core</span><span class="dl">'</span>
+
+<span class="kd">const</span> <span class="nx">oca</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">resolveFromZip</span><span class="p">(</span><span class="nx">ocaBundleFile</span><span class="p">)</span>
+<span class="kd">const</span> <span class="nx">validator</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Validator</span><span class="p">()</span>
+<span class="nx">validator</span><span class="p">.</span><span class="nx">validate</span><span class="p">(</span><span class="nx">oca</span><span class="p">)</span> <span class="c1">// { success: boolean, errors: string[] }</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>Rust:</p>
+<div class="language-rust highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="rouge-code"><pre><span class="k">use</span> <span class="nn">oca_rust</span><span class="p">::</span><span class="nn">state</span><span class="p">::{</span><span class="nn">oca</span><span class="p">::</span><span class="n">OCA</span><span class="p">,</span> <span class="nn">validator</span><span class="p">::{</span><span class="n">Validator</span><span class="p">,</span> <span class="n">Error</span><span class="p">}};</span>
+<span class="k">use</span> <span class="nn">oca_zip_resolver</span><span class="p">::</span><span class="n">resolve_from_zip</span><span class="p">;</span>
+
+<span class="k">let</span> <span class="n">oca</span> <span class="o">=</span> <span class="nf">resolve_from_zip</span><span class="p">(</span><span class="s">"path/to/oca_bundle.zip"</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<span class="k">let</span> <span class="n">validator</span> <span class="o">=</span> <span class="nn">Validator</span><span class="p">::</span><span class="nf">new</span><span class="p">();</span>
+<span class="n">validator</span><span class="nf">.validate</span><span class="p">(</span><span class="o">&amp;</span><span class="n">oca</span><span class="p">);</span> <span class="c1">// Result&lt;(), Vec&lt;Error&gt;&gt;</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>The code uses the <code class="language-plaintext highlighter-rouge">resolveFromZip</code> method to load the OCA Bundle from the file system. This function returns an <a href="#OCA-object-with-Form-and-Credential-overlays-ignored">OCA object</a> representing the OCA data in the zip archive. Then creates a <code class="language-plaintext highlighter-rouge">Validator</code> object to perform the validation. The <code class="language-plaintext highlighter-rouge">validate</code> method of the <code class="language-plaintext highlighter-rouge">Validator</code> is then called on the OCA object to perform the validation.</p>
+
+<p>In the JavaScript example, the <code class="language-plaintext highlighter-rouge">validate</code> method returns an object with a <code class="language-plaintext highlighter-rouge">success</code> property, which indicates whether the validation was successful, and an <code class="language-plaintext highlighter-rouge">errors</code> property, which is an array of error messages if the validation failed.
+In the Rust example, the <code class="language-plaintext highlighter-rouge">validate</code> method returns a <code class="language-plaintext highlighter-rouge">Result</code> object, with <code class="language-plaintext highlighter-rouge">Ok</code> if the validation was successful, or <code class="language-plaintext highlighter-rouge">Err</code> with a vector of <code class="language-plaintext highlighter-rouge">Error</code> objects if the validation failed.</p>
+
+<p>In both cases, the <code class="language-plaintext highlighter-rouge">Validator</code> object checks the OCA Bundle for any inconsistencies or errors, such as missing or invalid overlays, and returns information about any issues it finds. It allows users to ensure that the OCA Bundle is valid and can be used for accessing and analyzing the data.</p>
+
+<h2 id="validating-captured-data">Validating Captured Data</h2>
+
+<p>To validate the captured data, you need to use a tool like the <a href="https://oca.colossi.network/ecosystem/oca-validator.html">OCA Data Validator</a>. This tool allows you to check that the data in a CSV file conforms to the structure and format defined in an OCA Bundle.</p>
+
+<p>To use the OCA Data Validator, you first need to <a href="https://data-vault.argo.colossi.network/api/v1/files/E3AP34Xxh9zcAwwuw_zo4ixDCdoVHj3ML4LX5CwwF_8s">download</a> an example data file in CSV format. This file contains multiple rows of data, with each row representing a temperature measurement at a specific timestamp.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre>timestamp,temperature
+1607005200,22.7
+1607005260,22.8
+1607005320,22.9
+1607005380,22.7
+1607005440,22.8
+...,...
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>Once you have downloaded the data file, you can use the OCA Data Validator to check that the data in the file conforms to the OCA Bundle. To do this, you must create a Validator instance, set the validation constraints, and then run the validation process on the data.</p>
+
+<p>Both the JavaScript and Rust examples below show how to do this. The code creates a Validator instance, sets the validation constraints, and checks that the data in the CSV file conforms to the OCA bundle. If any issues are found, an error will be returned.</p>
+
+<p>JavaScript:</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre></td><td class="rouge-code"><pre><span class="kd">const</span> <span class="p">{</span> <span class="nx">Validator</span><span class="p">,</span> <span class="nx">CSVDataSet</span> <span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="dl">'</span><span class="s1">oca-data-validator</span><span class="dl">'</span><span class="p">)</span>
+<span class="kd">const</span> <span class="p">{</span> <span class="nx">resolveFromZip</span> <span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="dl">'</span><span class="s1">oca.js-form-core</span><span class="dl">'</span><span class="p">)</span>
+<span class="kd">const</span> <span class="nx">csv</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="dl">'</span><span class="s1">csvtojson</span><span class="dl">'</span><span class="p">)</span>
+
+<span class="kd">const</span> <span class="nx">oca</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">resolveFromZip</span><span class="p">(</span><span class="nx">ocaBundleFile</span><span class="p">)</span>
+<span class="kd">const</span> <span class="nx">validator</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Validator</span><span class="p">(</span><span class="nx">oca</span><span class="p">)</span>
+<span class="nx">validator</span><span class="p">.</span><span class="nx">setConstraints</span><span class="p">({</span> <span class="na">failOnAdditionalAttributes</span><span class="p">:</span> <span class="kc">true</span> <span class="p">})</span>
+
+<span class="kd">const</span> <span class="nx">data</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">csv</span><span class="p">().</span><span class="nx">fromFile</span><span class="p">(</span><span class="dl">'</span><span class="s1">path/to/data.csv</span><span class="dl">'</span><span class="p">)</span>
+<span class="nx">validator</span><span class="p">.</span><span class="nx">validate</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>Rust:</p>
+<div class="language-rust highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+</pre></td><td class="rouge-code"><pre><span class="k">use</span> <span class="nn">oca_conductor</span><span class="p">::{</span>
+    <span class="n">Validator</span><span class="p">,</span>
+    <span class="nn">validator</span><span class="p">::</span><span class="n">ConstraintsConfig</span><span class="p">,</span>
+    <span class="nn">data_set</span><span class="p">::</span><span class="n">CSVDataSet</span>
+<span class="p">};</span>
+<span class="k">use</span> <span class="nn">oca_zip_resolver</span><span class="p">::</span><span class="n">resolve_from_zip</span><span class="p">;</span>
+
+<span class="k">let</span> <span class="n">oca</span> <span class="o">=</span> <span class="nf">resolve_from_zip</span><span class="p">(</span><span class="s">"path/to/oca_bundle.zip"</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+<span class="k">let</span> <span class="k">mut</span> <span class="n">validator</span> <span class="o">=</span> <span class="nn">Validator</span><span class="p">::</span><span class="nf">new</span><span class="p">(</span><span class="n">oca</span><span class="p">);</span>
+<span class="n">validator</span><span class="nf">.set_constraints</span><span class="p">(</span><span class="n">ConstraintsConfig</span> <span class="p">{</span>
+    <span class="n">fail_on_additional_attributes</span><span class="p">:</span> <span class="k">true</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="k">let</span> <span class="n">file_path</span> <span class="o">=</span> <span class="nn">std</span><span class="p">::</span><span class="nn">path</span><span class="p">::</span><span class="nn">Path</span><span class="p">::</span><span class="nf">new</span><span class="p">(</span><span class="s">"path/to/data.csv"</span><span class="p">);</span>
+<span class="k">let</span> <span class="n">file_contents</span> <span class="o">=</span> <span class="nn">std</span><span class="p">::</span><span class="nn">fs</span><span class="p">::</span><span class="nf">read_to_string</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">?</span><span class="p">;</span>
+
+<span class="n">validator</span><span class="nf">.add_data_set</span><span class="p">(</span>
+    <span class="nn">CSVDataSet</span><span class="p">::</span><span class="nf">new</span><span class="p">(</span><span class="n">file_contents</span><span class="nf">.to_string</span><span class="p">())</span>
+        <span class="nf">.delimiter</span><span class="p">(</span><span class="sc">','</span><span class="p">)</span>
+<span class="p">);</span>
+
+<span class="n">validator</span><span class="nf">.validate</span><span class="p">();</span> <span class="c1">// Result&lt;(), Vec&lt;ValidationError&gt;&gt;</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>In the JavaScript code, the <code class="language-plaintext highlighter-rouge">oca-data-validator</code> and <code class="language-plaintext highlighter-rouge">oca.js-form-core</code> packages are used to create a Validator instance and resolve the OCA Bundle. The <code class="language-plaintext highlighter-rouge">csvtojson</code> package is used to parse the CSV file into a JSON object, which is then passed to the <code class="language-plaintext highlighter-rouge">validate</code> method on the <code class="language-plaintext highlighter-rouge">Validator</code> instance to validate the data against the OCA Bundle.</p>
+
+<p>In the Rust code, the <code class="language-plaintext highlighter-rouge">oca_conductor</code> and <code class="language-plaintext highlighter-rouge">oca_zip_resolver</code> crates are used to create a <code class="language-plaintext highlighter-rouge">Validator</code> instance and resolve the OCA Bundle. The <code class="language-plaintext highlighter-rouge">std::fs</code> module reads the CSV file’s contents into a String, which is then passed to the <code class="language-plaintext highlighter-rouge">add_data_set</code> method on the <code class="language-plaintext highlighter-rouge">Validator</code> instance. The <code class="language-plaintext highlighter-rouge">validate</code> method is called on the <code class="language-plaintext highlighter-rouge">Validator</code> instance to validate the data against the OCA Bundle.</p>
+
+<h2 id="transforming-units-converting-from-celsius-to-kelvin">Transforming Units: Converting from Celsius to Kelvin</h2>
+<p>Transforming units is a common task when working with data captured by sensors. In the case of temperature data, it may be necessary to convert from one unit of measurement to another. For example, you may need to convert from Celsius to Kelvin or vice versa.</p>
+
+<p>The following code demonstrates how to use the <a href="https://oca.colossi.network/ecosystem/oca-transformer.html">OCA Data Transformer</a> to convert the units of captured data from Celsius to Kelvin.</p>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+</pre></td><td class="rouge-code"><pre><span class="kd">const</span> <span class="nx">fs</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="dl">'</span><span class="s1">fs</span><span class="dl">'</span><span class="p">)</span>
+<span class="kd">const</span> <span class="p">{</span> <span class="nx">Transformer</span><span class="p">,</span> <span class="nx">CSVDataSet</span> <span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="dl">'</span><span class="s1">oca-data-transformer</span><span class="dl">'</span><span class="p">)</span>
+<span class="kd">const</span> <span class="p">{</span> <span class="nx">resolveFromZip</span> <span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="dl">'</span><span class="s1">oca.js-form-core</span><span class="dl">'</span><span class="p">)</span>
+
+<span class="kd">const</span> <span class="nx">data</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readFileSync</span><span class="p">(</span><span class="dl">'</span><span class="s1">data.csv</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">utf8</span><span class="dl">'</span><span class="p">);</span>
+<span class="kd">const</span> <span class="nx">delimiter</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">,</span><span class="dl">'</span>
+<span class="kd">const</span> <span class="nx">oca</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">resolveFromZip</span><span class="p">(</span><span class="nx">ocaBundleFile</span><span class="p">)</span>
+
+<span class="kd">const</span> <span class="nx">transformer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Transformer</span><span class="p">(</span><span class="nx">oca</span><span class="p">)</span>
+  <span class="p">.</span><span class="nx">addDataSet</span><span class="p">(</span><span class="k">new</span> <span class="nx">CSVDataSet</span><span class="p">(</span><span class="nx">data</span><span class="p">,</span> <span class="nx">delimiter</span><span class="p">))</span>
+  <span class="p">.</span><span class="nx">transform</span><span class="p">([</span><span class="s2">`
+{
+  "attribute_units": {
+    "temperature": "K"
+  },
+  "capture_base": "E1ZVGMTH-A-E4jJ5HDM7Lkpwz822Fs4Sa4HNol7oGY9M",
+  "metric_system": "SI",
+  "type": "spec/overlays/unit/1.0"
+}
+  `</span><span class="p">])</span>
+
+<span class="nx">transformer</span><span class="p">.</span><span class="nx">getRawDatasets</span><span class="p">()</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+<p>The code reads the data from a CSV file called <code class="language-plaintext highlighter-rouge">data.csv</code> using the <code class="language-plaintext highlighter-rouge">fs</code> module and stores the data in a variable called <code class="language-plaintext highlighter-rouge">data</code>. The code also sets a delimiter for the CSV data, specifying the character used to separate the values in each row. In this case, the delimiter is a comma.</p>
+
+<p>The code then uses the <code class="language-plaintext highlighter-rouge">resolveFromZip</code> function from the <code class="language-plaintext highlighter-rouge">oca.js-form-core</code> package to read the OCA Bundle from the specified zip archive file.</p>
+
+<p>Next, the code creates a new <code class="language-plaintext highlighter-rouge">Transformer</code> instance and adds the <code class="language-plaintext highlighter-rouge">CSVDataSet</code> instance that was created earlier to the transformer. The <code class="language-plaintext highlighter-rouge">Transformer</code> instance is then used to transform the data in the OCA Bundle. In this case, the transformation is specified using a Unit overlay that defines the attribute units to be used for the temperature data (in this case, Kelvin).</p>
+
+<p>Finally, the code calls the <code class="language-plaintext highlighter-rouge">getRawDatasets</code> method on the <code class="language-plaintext highlighter-rouge">Transformer</code> instance to retrieve the transformed data. This method returns the transformed data as an array of datasets, which can be accessed and used as needed.</p>
+
+<h2 id="conclusion-and-next-steps">Conclusion and Next Steps</h2>
+<p>The OCA Bundle provides a number of benefits over more traditional methods of representing data. It enables the data from different sensors and devices to be easily combined and shared with other applications or systems, which can help to improve the interoperability and usefulness of the data. Additionally, the OCA Bundle provides a consistent and well-defined structure for representing sensor data, which can make it easier for developers to work with the data in their applications.</p>
+
+<p>There are many ways to continue exploring OCA and working with OCA data. One possible next step is to look at the <a href="https://oca.colossi.network/specification/">OCA specification</a> in more detail and learn more about the different elements of OCA. Another potential direction is to experiment with different ways of accessing and working with OCA data, such as using the <a href="https://www.npmjs.com/package/oca.js">oca.js</a> library, <a href="https://crates.io/crates/oca-rust">oca-rust</a> crate or other <a href="https://oca.colossi.network/ecosystem/tour.html">tools</a> and libraries that support OCA. Finally, you could explore the use of OCA in real-world applications, such as IoT systems or other scenarios where data is collected and shared. Regardless of which direction you choose to take, OCA provides a powerful and flexible framework for managing and working with data.</p>
+
+<h2 id="appendix">Appendix</h2>
+<h4 id="oca-object-with-form-and-credential-overlays-ignored">OCA object (with Form and Credential overlays ignored):</h4>
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+</pre></td><td class="rouge-code"><pre><span class="p">{</span><span class="w">
+  </span><span class="nl">"capture_base"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"temperature"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Numeric"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Text"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"classification"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"digest"</span><span class="p">:</span><span class="w"> </span><span class="s2">"EmL-JD22a1RywPXzzZLAEOxR8NHSi-04pQnOhNwHG7sg"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"flagged_attributes"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"spec/capture_base/1.0"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"overlays"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"attribute_character_encoding"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"temperature"</span><span class="p">:</span><span class="w"> </span><span class="s2">"utf-8"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"utf-8"</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+      </span><span class="nl">"capture_base"</span><span class="p">:</span><span class="w"> </span><span class="s2">"EmL-JD22a1RywPXzzZLAEOxR8NHSi-04pQnOhNwHG7sg"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"default_character_encoding"</span><span class="p">:</span><span class="w"> </span><span class="s2">"utf-8"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"digest"</span><span class="p">:</span><span class="w"> </span><span class="s2">"EmYQZgAnoE_AIsOiZHL17jw7KGnYgY1pPRFfSUnVYUj0"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"spec/overlays/character_encoding/1.0"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"attribute_units"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"temperature"</span><span class="p">:</span><span class="w"> </span><span class="s2">"C"</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+      </span><span class="nl">"capture_base"</span><span class="p">:</span><span class="w"> </span><span class="s2">"EmL-JD22a1RywPXzzZLAEOxR8NHSi-04pQnOhNwHG7sg"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"digest"</span><span class="p">:</span><span class="w"> </span><span class="s2">"EATuKGoJosYKLyLvdNBXpFM2YeuKuzvthOHu08whWWmA"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"metric_system"</span><span class="p">:</span><span class="w"> </span><span class="s2">"nonSI"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"spec/overlays/unit/1.0"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></pre></td></tr></tbody></table></code></pre></div></div>
+
+
+</article>
+
+<aside class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+    <li>
+      <h3>
+        <a href="/2022/11/21/mobile-app-content-accessibility/">
+          Mobile app content accessibility
+          <small><time datetime="2022-11-21T17:27:05+00:00">21 Nov 2022</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2022/09/26/flutter-and-rust-combined-creating-a-plugin-to-support-various-operating-systems/">
+          Flutter and Rust combined. Creating a plugin to support various operating systems
+          <small><time datetime="2022-09-26T17:27:05+00:00">26 Sep 2022</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2022/09/22/the-various-angles-of-user-interfaces/">
+          The various angles of User Interfaces
+          <small><time datetime="2022-09-22T20:38:32+00:00">22 Sep 2022</time></small>
+        </a>
+      </h3>
+    </li>
+    
+  </ul>
+</aside>
+
+
+
+<!-- Add Disqus comments. -->
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'opensoftwareblog';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+      </main>
+
+      <footer class="footer">
+        <small>
+          ArgonAUTHs <time datetime="2023-01-29T22:03:57+00:00">2023</time>. EUPL 1.2.
+        </small>
+      </footer>
+    </div>
+    <script>
+      var show = function (elem) {
+        elem.classList.add('is-visible');
+      };
+
+      // Hide an element
+      var hide = function (elem) {
+        elem.classList.remove('is-visible');
+      };
+
+      // Toggle element visibility
+      var toggle = function (elem) {
+        elem.classList.toggle('is-visible');
+      };
+
+      document.querySelector("#nav-toggle").addEventListener("click", function(event) {
+        var content = document.querySelector(".pull");
+        if (!content) return;
+
+        toggle(content);
+      });
+
+    </script>
+  </body>
+</html>

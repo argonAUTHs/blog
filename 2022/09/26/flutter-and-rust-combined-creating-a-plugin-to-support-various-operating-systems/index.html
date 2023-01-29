@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      Flutter and Rust combined. Creating a plugin to support various operating systems &middot; 
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/bootstrap.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/syntax.css">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" sizes="144x144" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/atom+xml" title="" href="/atom.xml">
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home" class='logo'></a>
+          <nav class="pull toggle-content">
+            <ul class="top-nav">
+              
+              <li><h2><a href="/archive">Archive</a></h2></li>
+              
+              <li><h2><a href="/atom.xml">Feed</a></h2></li>
+              
+            </ul>
+          </nav>
+          <div class="text-right navicon">
+            <a id="nav-toggle" class="nav_slide_button" href="#"><span></span></a>
+          </div>
+        </h3>
+      </header>
+
+      <main>
+        
+<p>
+<i class="glyphicon glyphicon-tags" style="padding-right: .5rem;"></i>
+
+<a href="/tag/flutter" title="View posts tagged with &quot;flutter&quot;"><u>flutter</u></a>, 
+
+<a href="/tag/rust" title="View posts tagged with &quot;rust&quot;"><u>rust</u></a>, 
+
+<a href="/tag/method channel" title="View posts tagged with &quot;method channel&quot;"><u>method channel</u></a>, 
+
+<a href="/tag/ffi" title="View posts tagged with &quot;ffi&quot;"><u>ffi</u></a>
+
+</p>
+
+
+<article class="post">
+  <h1 class="post-title">Flutter and Rust combined. Creating a plugin to support various operating systems</h1>
+  <time datetime="2022-09-26T17:27:05+00:00" class="post-date">26 Sep 2022</time>
+  
+  <p class="post-author">
+  by
+  
+  Justyna Gręda
+  
+  </p>
+  
+  <p>Both, Flutter and Rust are pretty novel technologies in the industry. Both also introduce a paradigm shift of how to approach portability, a very old and diffcult problem to solve. Portability is diffcult due to lack of common denominator across platforms, devices and operating systems. To achieve it, Flutter comes with a concept of <a href="https://docs.flutter.dev/development/platform-integration/platform-channels">MethodChannel</a>, a cross-boundary interface that allows to write and call platform native code. It then enables seamless integrations that are essential when working with Operating System specific user interface or natively accessing device peripherals. No more tweaks thanks to proper integration mechanisms. Rust, on the the other hand, is getting traction in various ecosystems and there are at least several reasons why it becomes more and more popular as general purpose programming language. Rust is in essence a C-based language with novel concepts and modern tooling supporting the language. It has steep learning curve due to the architectural decisions baked in into the language. However once it is overcame it pays off. One especially interesing characteristic of the language is its adaptability in almost any environment. As a C-based language, program written in Rust can be exposed as a binary to many modern Operating Systems. Not only that, thanks to <a href="https://en.wikipedia.org/wiki/Foreign_function_interface">Foreign Function Interface (FFI)</a> integration possibilities of Rust-based code, it became viable alternative to write platform agnostic code and expose it through FFI. In other words one Rust library can be consumed by any other C-based language. The core business logic is then encapsulated into one library that is later consumed within platform specific languages.</p>
+
+<p>This post guides the reader how to benefit from Flutter and Rust collaboration in a best form. When native programming lanugages available in <code class="language-plaintext highlighter-rouge">FlutterMethodChannel</code> don’t come in handy, <a href="https://pub.dev/packages/flutter_rust_bridge">flutter_rust_bridge</a> might be the solution. It allows the use of Rust code in Flutter application through an externally generated library. This tutorial however will not be introducing to the usage of the plugin. It assumes the user is familiar with <code class="language-plaintext highlighter-rouge">flutter_rust_bridge</code> <a href="http://cjycode.com/flutter_rust_bridge/">documentation</a> and knows the basics. Moreover, to build for iOS and MacOS it is necessary to have access to Xcode and MacOS device. To build for Windows, Windows OS is needed as well. <code class="language-plaintext highlighter-rouge">flutter_rust_bridge</code> provided tutorial for Android + Rust plugin so it will not be covered here.</p>
+
+<p>A proof of concept plugin can be found <a href="https://github.com/argonAUTHs/flutter_rust_plugin">here</a>.</p>
+
+<h2 id="initial-steps">Initial steps</h2>
+<ol>
+  <li>In the root folder of your project create a new directory. It will be later referred here as <code class="language-plaintext highlighter-rouge">$rust_part</code>.</li>
+  <li>Run <code class="language-plaintext highlighter-rouge">cargo init</code> inside <code class="language-plaintext highlighter-rouge">$rust_part</code>. This will create <code class="language-plaintext highlighter-rouge">src</code> folder and <code class="language-plaintext highlighter-rouge">Cargo.toml</code> file.</li>
+  <li>In the <code class="language-plaintext highlighter-rouge">src</code> folder there is one file: <code class="language-plaintext highlighter-rouge">main.rs</code>. It can be deleted. Create 2 new files called <code class="language-plaintext highlighter-rouge">lib.rs</code> and <code class="language-plaintext highlighter-rouge">api.rs</code>. The first one will call all modules from rust project while the other is a module containing all functions that should be bridged to dart.</li>
+  <li>Modify the <code class="language-plaintext highlighter-rouge">api.rs</code> file and add your library functionality. In this case it will be a simple hello world string function:
+    <div class="language-rust highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre> <span class="k">pub</span> <span class="k">fn</span> <span class="nf">hello</span><span class="p">()</span> <span class="k">-&gt;</span> <span class="nb">String</span> <span class="p">{</span>
+     <span class="k">return</span> <span class="s">"Hello World!"</span><span class="nf">.to_string</span><span class="p">();</span>
+ <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>Modify the <code class="language-plaintext highlighter-rouge">lib.rs</code> file:
+    <pre><code class="language-rust=">pub mod api;
+</code></pre>
+  </li>
+  <li>Add the following lines to <code class="language-plaintext highlighter-rouge">Cargo.toml</code> (Notice: The lib lines may change depending on the platform you are building for. ):
+    <div class="language-toml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre> <span class="nn">[lib]</span>
+ <span class="py">crate-type</span> <span class="p">=</span> <span class="p">[</span><span class="s">"staticlib"</span><span class="p">,</span> <span class="s">"cdylib"</span><span class="p">]</span>
+
+ <span class="nn">[dependencies]</span>
+ <span class="py">flutter_rust_bridge</span> <span class="p">=</span> <span class="s">"1"</span>
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>Run the following commands in <code class="language-plaintext highlighter-rouge">$rust_part</code>:
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre> cargo <span class="nb">install </span>flutter_rust_bridge_codegen
+ flutter pub add <span class="nt">--dev</span> ffigen
+ flutter pub add ffi
+ flutter pub add flutter_rust_bridge
+ cargo <span class="nb">install </span>cargo-xcode
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>Cross compiling targets setup will not be covered here. For more information on the topic please check the recommended <code class="language-plaintext highlighter-rouge">flutter_rust_bridge</code> documentation (<a href="http://cjycode.com/flutter_rust_bridge/template/setup_android.html">here</a> is an example of Android target setup).</li>
+  <li>The Rust part is ready to be built. For different targets use:
+    <ul>
+      <li>For Android: <code class="language-plaintext highlighter-rouge">cargo ndk -o ../android/src/main/jniLibs build --release</code>. This command results in two <code class="language-plaintext highlighter-rouge">librust_part.so</code> files for two Android architectures.</li>
+      <li>For Windows: <code class="language-plaintext highlighter-rouge">cargo build --release</code> (has to be executed on Windows OS) . <strong>Important:</strong> The <code class="language-plaintext highlighter-rouge">crate-type</code> in <code class="language-plaintext highlighter-rouge">Cargo.toml</code> has to be changed to <code class="language-plaintext highlighter-rouge">"dylib"</code>. In folder <code class="language-plaintext highlighter-rouge">rust_part/target/release</code> you will find files called <code class="language-plaintext highlighter-rouge">rust_part.dll</code> and <code class="language-plaintext highlighter-rouge">rust_part.dll.lib</code>. Remove the <code class="language-plaintext highlighter-rouge">.dll</code> part from the second one and the Windows files are ready.</li>
+      <li>For iOS: <code class="language-plaintext highlighter-rouge">cargo lipo</code>. In folder <code class="language-plaintext highlighter-rouge">rust_part/target/universal/release</code> you will find <code class="language-plaintext highlighter-rouge">librust_part.a</code> file.</li>
+      <li>For MacOS: <code class="language-plaintext highlighter-rouge">cargo build --release</code> (has to be executed on Windows OS) . <strong>Important:</strong> The <code class="language-plaintext highlighter-rouge">crate-type</code> in <code class="language-plaintext highlighter-rouge">Cargo.toml</code> has to be changed to <code class="language-plaintext highlighter-rouge">"dylib"</code>. In folder <code class="language-plaintext highlighter-rouge">rust_part/target/release</code> you will find file called <code class="language-plaintext highlighter-rouge">librust_part.dylib</code>.</li>
+    </ul>
+  </li>
+</ol>
+
+<h2 id="ios">iOS</h2>
+
+<ol>
+  <li>Make sure you created support for iOS in your project with <code class="language-plaintext highlighter-rouge">flutter create --platform=ios .</code>
+<strong>Warning:</strong> This command will create all files that are automatically created when making new Flutter project. If for some reason you deleted some of them, you might need to get rid of them again.</li>
+  <li>Run <code class="language-plaintext highlighter-rouge">cargo xcode</code> in <code class="language-plaintext highlighter-rouge">$rust_part</code>. This will create a <code class="language-plaintext highlighter-rouge">.xcodeproj</code> file. This file will be soon opened in Xcode to change symbol stripping method.</li>
+  <li>Run <code class="language-plaintext highlighter-rouge">cargo lipo</code> in <code class="language-plaintext highlighter-rouge">$rust_part</code>. To specify target, run with <code class="language-plaintext highlighter-rouge">-p $target</code> flag. To build a release library (smaller in size), use <code class="language-plaintext highlighter-rouge">--release</code> flag.</li>
+  <li>Next, run the generator: <code class="language-plaintext highlighter-rouge">flutter_rust_bridge_codegen --rust-input $rust_part/src/api.rs --dart-output lib/bridge_generated.dart --c-output ios/bridge_generated.h</code>
+Actually, the location of <code class="language-plaintext highlighter-rouge">bridge_generated.h</code> is not that important, as it is created only to have its content appended to another file.</li>
+  <li>Then create a symbolic link in iOS folder to <code class="language-plaintext highlighter-rouge">.a</code> library: <code class="language-plaintext highlighter-rouge">ln -s ../$rust_part/target/universal/release/librust_part.a</code>
+You may also move the <code class="language-plaintext highlighter-rouge">.a</code> file to the <code class="language-plaintext highlighter-rouge">ios</code> folder, this way there is no need for the symlink as the library is directly accessible.</li>
+  <li>Then append the contents of <code class="language-plaintext highlighter-rouge">bridge_generated.h</code> to <code class="language-plaintext highlighter-rouge">/ios/Classes/$Plugin.h</code>: <code class="language-plaintext highlighter-rouge">cat ios/bridge_generated.h &gt;&gt; ios/Classes/$Plugin.h</code></li>
+  <li>Then add in <code class="language-plaintext highlighter-rouge">ios/Classes/.swift</code> file dummy method:
+    <div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre> <span class="kd">public</span> <span class="kd">func</span> <span class="nf">dummyMethodToEnforceBundling</span><span class="p">()</span> <span class="p">{</span>
+   <span class="c1">// This will never be executed</span>
+   <span class="nf">dummy_method_to_enforce_bundling</span><span class="p">();</span>
+ <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>Next, edit <code class="language-plaintext highlighter-rouge">podspec</code> file and add the following lines:
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre>  s.public_header_files = 'Classes**/*.h'
+  s.static_framework = true
+  s.vendored_libraries = "**/*.a"
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>Next, remember to set the strip style to non global symbols on both the <code class="language-plaintext highlighter-rouge">.xcodeproj</code> in <code class="language-plaintext highlighter-rouge">$rust_part</code> and <code class="language-plaintext highlighter-rouge">.xcodeworkspace</code> in example (if you want to run the example).</li>
+  <li>Remember to edit <code class="language-plaintext highlighter-rouge">pubspec.yaml</code> file so it has following structure:
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre><span class="na">plugin</span><span class="pi">:</span>
+    <span class="na">platforms</span><span class="pi">:</span>
+      <span class="na">android</span><span class="pi">:</span>
+        <span class="na">package</span><span class="pi">:</span> <span class="s">com.example.flutter_rust_plugin</span>
+        <span class="na">pluginClass</span><span class="pi">:</span> <span class="s">FlutterRustPlugin</span>
+      <span class="na">ios</span><span class="pi">:</span>
+        <span class="na">pluginClass</span><span class="pi">:</span> <span class="s">FlutterRustPlugin</span>
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+    <p>The <code class="language-plaintext highlighter-rouge">pluginClass</code> here for iOS stands for <code class="language-plaintext highlighter-rouge">.h</code> file in Classes folder.</p>
+  </li>
+</ol>
+
+<h3 id="ios-troubleshooting">iOS Troubleshooting</h3>
+<ul>
+  <li>run <code class="language-plaintext highlighter-rouge">pod install</code> in ios folder with Runner (helps with <code class="language-plaintext highlighter-rouge">module not found</code> error in Xcode)</li>
+  <li>to run a different dart file than <code class="language-plaintext highlighter-rouge">main.dart</code> edit <code class="language-plaintext highlighter-rouge">FLUTTER_TARGET</code> in Xcode in Runner Build Settings.</li>
+  <li>check <code class="language-plaintext highlighter-rouge">iOS Deployment Target</code>, 9.0 might be too old for some releases.</li>
+</ul>
+
+<h2 id="macos">MacOS</h2>
+<p>This tutorial is made for a multiplatform project and it assumes the iOS support is already working.</p>
+<ol>
+  <li>
+    <p>Add support for MacOS in your project by executing <code class="language-plaintext highlighter-rouge">flutter create --platform=macos .</code>
+<strong>Warning:</strong> This command will create all files that are automatically created when making new Flutter project. If for some reason you deleted some of them, you might need to get rid of them again.</p>
+  </li>
+  <li>To link your Rust library with MacOS, <code class="language-plaintext highlighter-rouge">.dylib</code> file type is necessary. To generate it, edit <code class="language-plaintext highlighter-rouge">Cargo.toml</code>, so that it has following structure:
+    <div class="language-toml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre> <span class="nn">[lib]</span>
+ <span class="py">crate-type</span> <span class="p">=</span> <span class="nn">["dylib"]</span>
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+    <p>Then run <code class="language-plaintext highlighter-rouge">cargo build</code> in your <code class="language-plaintext highlighter-rouge">$crate</code> directory. Remember to use the flag <code class="language-plaintext highlighter-rouge">--release</code> to make the lib much smaller.</p>
+  </li>
+  <li>Move your <code class="language-plaintext highlighter-rouge">.dylib</code> file to <code class="language-plaintext highlighter-rouge">macos</code> folder in your project.</li>
+  <li>In <code class="language-plaintext highlighter-rouge">.swift</code> file in <code class="language-plaintext highlighter-rouge">macos/Classes</code> add the dummy method (more about it in <code class="language-plaintext highlighter-rouge">flutter_rust_bridge</code> documentation):
+    <div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre> <span class="kd">public</span> <span class="kd">func</span> <span class="nf">dummyMethodToEnforceBundling</span><span class="p">()</span> <span class="p">{</span>
+     <span class="c1">// This will never be executed</span>
+     <span class="nf">dummy_method_to_enforce_bundling</span><span class="p">()</span>
+ <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>Don’t forget to edit <code class="language-plaintext highlighter-rouge">pubspec.yaml</code> and add the MacOS support:
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre> <span class="na">plugin</span><span class="pi">:</span>
+     <span class="na">platforms</span><span class="pi">:</span>
+       <span class="na">macos</span><span class="pi">:</span> 
+         <span class="na">pluginClass</span><span class="pi">:</span> <span class="s">FlutterRustPlugin</span>
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>Edit the <code class="language-plaintext highlighter-rouge">.podspec</code> file and add following lines:
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre> s.vendored_libraries = "**/*.dylib"
+ s.public_header_files = 'Classes**/*.h'
+ s.static_framework = true
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>Copy the <code class="language-plaintext highlighter-rouge">bridge_generated.h</code> file from <code class="language-plaintext highlighter-rouge">ios</code> folder to <code class="language-plaintext highlighter-rouge">macos/Classes</code>. This file has been generated when enabling support for iOS. To generate it, run: <code class="language-plaintext highlighter-rouge">flutter_rust_bridge_codegen --rust-input $rust_part/src/api.rs --dart-output lib/bridge_generated.dart --c-output macos/Classes/bridge_generated.h</code></li>
+</ol>
+
+<h3 id="macos-troubleshooting">MacOS Troubleshooting</h3>
+<ul>
+  <li>If you run into <code class="language-plaintext highlighter-rouge">no such module</code> error while running the example, enter <code class="language-plaintext highlighter-rouge">example/macos</code> folder in project and execute <code class="language-plaintext highlighter-rouge">pod install</code> in the command line. This installs the missing module.</li>
+  <li>If during testing the example you run into <code class="language-plaintext highlighter-rouge">cannot find 'dummy_method_to_enforce_bundling' in scope</code>, run <code class="language-plaintext highlighter-rouge">pod update</code>.</li>
+  <li>For other errors, try <code class="language-plaintext highlighter-rouge">pod deintegrate</code> and <code class="language-plaintext highlighter-rouge">pod install</code> to reinstall pods.</li>
+  <li>Try deleting all folders from <code class="language-plaintext highlighter-rouge">/Users/&lt;your username&gt;/Library/Developer/Xcode/DerivedData</code> and cleaning your build folder.</li>
+</ul>
+
+<h2 id="windows">Windows</h2>
+<p>This part of the tutorial assumes the user has generated library files <code class="language-plaintext highlighter-rouge">.dll</code> and <code class="language-plaintext highlighter-rouge">.lib</code> as described in Initial steps.</p>
+<ol>
+  <li>If your plugin project does not have Windows support activated, execute <code class="language-plaintext highlighter-rouge">flutter create --platform=windows</code> in project root folder:</li>
+</ol>
+
+<p><strong>Warning:</strong> This command will create all files that are automatically created when making new Flutter project. If for some reason you deleted some of them, you might need to get rid of them again.</p>
+
+<ol>
+  <li>Make a new folder under created in previous point <code class="language-plaintext highlighter-rouge">windows</code> directory, let us refer to it by <code class="language-plaintext highlighter-rouge">$crate</code>.</li>
+  <li>Place the <code class="language-plaintext highlighter-rouge">.dll</code> and <code class="language-plaintext highlighter-rouge">.lib</code> files in <code class="language-plaintext highlighter-rouge">$crate</code> directory and change their names to <code class="language-plaintext highlighter-rouge">$crate.dll</code> and <code class="language-plaintext highlighter-rouge">$crate.lib</code>.</li>
+  <li>In your <code class="language-plaintext highlighter-rouge">$crate</code> directory create a new file, <code class="language-plaintext highlighter-rouge">CMakeLists.txt</code>. Append the following lines to the file:
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre> include(../../cmake/$crate.cmake)
+
+ set_property(TARGET ${CRATE_NAME} PROPERTY IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/$crate.dll")
+ set_property(TARGET ${CRATE_NAME} PROPERTY IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/$crate.lib")
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+    <p>The included <code class="language-plaintext highlighter-rouge">$crate.cmake</code> file will be created in the next steps.</p>
+  </li>
+  <li>In your root folder, create <code class="language-plaintext highlighter-rouge">cmake</code> directory.</li>
+  <li>Under <code class="language-plaintext highlighter-rouge">cmake</code> directory create <code class="language-plaintext highlighter-rouge">$crate.cmake</code> file. Append the following lines to the file:
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="rouge-code"><pre> message("-- Linking Rust")
+ set(CRATE_NAME "$crate")
+ set(CRATE_NAME ${CRATE_NAME} PARENT_SCOPE)
+ if(CRATE_STATIC)
+   add_library(${CRATE_NAME} STATIC IMPORTED GLOBAL)
+ else()
+   add_library(${CRATE_NAME} SHARED IMPORTED GLOBAL)
+ endif()
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>Under <code class="language-plaintext highlighter-rouge">cmake</code> directory create <code class="language-plaintext highlighter-rouge">main.cmake</code> file. Append the following lines to the file:
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre> add_subdirectory($crate)
+ target_link_libraries(${PLUGIN_NAME} PRIVATE ${CRATE_NAME})
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>Edit the <code class="language-plaintext highlighter-rouge">windows/CMakeLists.txt</code> file. Add the following lines:
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre> include(../cmake/main.cmake)
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+    <p>Put this line after <code class="language-plaintext highlighter-rouge">target_link_libraries</code> line.</p>
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre># List of absolute paths to libraries that should be bundled with the plugin.
+# This list could contain prebuilt libraries, or libraries created by an
+# external build triggered from this build file.
+ set(flutter_rust_plugin_bundled_libraries
+   "$&lt;TARGET_FILE:${CRATE_NAME}&gt;"
+   PARENT_SCOPE
+ )
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+    <p>Here, change <code class="language-plaintext highlighter-rouge">""</code> to <code class="language-plaintext highlighter-rouge">"$&lt;TARGET_FILE:${CRATE_NAME}&gt;"</code>.</p>
+  </li>
+  <li>Don’t forget to declare support for windows in <code class="language-plaintext highlighter-rouge">pubspec.yaml</code> file:
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre> plugin:
+     platforms:
+       android:
+         package: com.example.flutter_rust_plugin
+         pluginClass: FlutterRustPlugin
+       windows:
+         pluginClass: FlutterRustPluginCApi
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+  </li>
+</ol>
+
+<h3 id="integration-with-dart">Integration with Dart</h3>
+<ul>
+  <li>Your <code class="language-plaintext highlighter-rouge">.lib</code> folder should have a similar structure (old plugin template):
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre>  ├── lib
+      ├── bridge_generated.dart
+      └── flutter_rust_plugin.dart
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+    <p>Where <code class="language-plaintext highlighter-rouge">bridge_generated.dart</code> is a file generated using <code class="language-plaintext highlighter-rouge">flutter_rust_bridge_codegen</code> and <code class="language-plaintext highlighter-rouge">flutter_rust_plugin.dart</code> is the main plugin file. For more information on flutter plugin check out the official <a href="https://docs.flutter.dev/development/packages-and-plugins/developing-packages">documentation</a>.</p>
+  </li>
+  <li><code class="language-plaintext highlighter-rouge">flutter_rust_plugin.dart</code> file contains all methods that will be available in the plugin for the users. The libraries is loaded there. Here is an example of code used to load the libraries:
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="rouge-code"><pre>  static const base = 'rust_part';
+  static final path = Platform.isWindows? '$base.dll' : 'lib$base.so';
+  static late final dylib = Platform.isIOS
+        ? DynamicLibrary.process()
+        : Platform.isMacOS
+        ? DynamicLibrary.executable()
+        : DynamicLibrary.open(path);
+    static late final api = RustPartImpl(dylib);
+</pre></td></tr></tbody></table></code></pre></div>    </div>
+    <p>The <code class="language-plaintext highlighter-rouge">RustPartImpl</code> is the name of the class in <code class="language-plaintext highlighter-rouge">bridge_generated.dart</code>, the one class that extends <code class="language-plaintext highlighter-rouge">FlutterRustBridgeBase</code>. In order to call the method from library, use:</p>
+    <pre><code class="language-dart=">await api.methodName();
+</code></pre>
+  </li>
+</ul>
+
+<hr />
+<h3 id="references">References</h3>
+<ul>
+  <li>iOS: This tutorial was created using the official documentation of <a href="http://cjycode.com/flutter_rust_bridge/integrate.html">flutter_rust_bridge</a> and <a href="https://mozilla.github.io/firefox-browser-architecture/experiments/2017-09-06-rust-on-ios.html">mozilla github post</a>. If something is not clear, checking out these sources might help you.</li>
+  <li>Windows: This tutorial was created using the official documentation of <a href="http://cjycode.com/flutter_rust_bridge/integrate.html">flutter_rust_bridge</a> and <a href="https://github.com/mouEsam/rust_cryptor">this</a> proof of concept for Flutter+Rust plugin. If something is not clear, checking out these sources might help you.</li>
+</ul>
+
+</article>
+
+<aside class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+    <li>
+      <h3>
+        <a href="/2023/01/29/Exploring-the-Overlays-Capture-Architecture/">
+          Exploring the Overlays Capture Architecture: Managing Data Captured from Temperature Sensors
+          <small><time datetime="2023-01-29T17:27:05+00:00">29 Jan 2023</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2022/11/21/mobile-app-content-accessibility/">
+          Mobile app content accessibility
+          <small><time datetime="2022-11-21T17:27:05+00:00">21 Nov 2022</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2022/09/22/the-various-angles-of-user-interfaces/">
+          The various angles of User Interfaces
+          <small><time datetime="2022-09-22T20:38:32+00:00">22 Sep 2022</time></small>
+        </a>
+      </h3>
+    </li>
+    
+  </ul>
+</aside>
+
+
+
+<!-- Add Disqus comments. -->
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'opensoftwareblog';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+      </main>
+
+      <footer class="footer">
+        <small>
+          ArgonAUTHs <time datetime="2023-01-29T22:03:57+00:00">2023</time>. EUPL 1.2.
+        </small>
+      </footer>
+    </div>
+    <script>
+      var show = function (elem) {
+        elem.classList.add('is-visible');
+      };
+
+      // Hide an element
+      var hide = function (elem) {
+        elem.classList.remove('is-visible');
+      };
+
+      // Toggle element visibility
+      var toggle = function (elem) {
+        elem.classList.toggle('is-visible');
+      };
+
+      document.querySelector("#nav-toggle").addEventListener("click", function(event) {
+        var content = document.querySelector(".pull");
+        if (!content) return;
+
+        toggle(content);
+      });
+
+    </script>
+  </body>
+</html>

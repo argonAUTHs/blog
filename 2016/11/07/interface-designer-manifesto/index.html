@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="UTF-8">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    
+      Software Interface Designer Manifesto &middot; 
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/bootstrap.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/syntax.css">
+
+  <!-- Icons -->
+  <link rel="apple-touch-icon" sizes="144x144" href="/public/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/public/favicon.ico">
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/atom+xml" title="" href="/atom.xml">
+</head>
+
+
+  <body>
+
+    <div class="container content">
+      <header class="masthead">
+        <h3 class="masthead-title">
+          <a href="/" title="Home" class='logo'></a>
+          <nav class="pull toggle-content">
+            <ul class="top-nav">
+              
+              <li><h2><a href="/archive">Archive</a></h2></li>
+              
+              <li><h2><a href="/atom.xml">Feed</a></h2></li>
+              
+            </ul>
+          </nav>
+          <div class="text-right navicon">
+            <a id="nav-toggle" class="nav_slide_button" href="#"><span></span></a>
+          </div>
+        </h3>
+      </header>
+
+      <main>
+        
+<p>
+<i class="glyphicon glyphicon-tags" style="padding-right: .5rem;"></i>
+
+<a href="/tag/Software craftsmanship" title="View posts tagged with &quot;Software craftsmanship&quot;"><u>Software craftsmanship</u></a>
+
+</p>
+
+
+<article class="post">
+  <h1 class="post-title">Software Interface Designer Manifesto</h1>
+  <time datetime="2016-11-07T21:38:32+00:00" class="post-date">07 Nov 2016</time>
+  
+  <p class="post-author">
+  by
+  
+  Michal Pietrus
+  
+  </p>
+  
+  <ol>
+  <li>
+    <p>A program without interface is just machine code. Machines understand everything tailored to language rules. They don’t care about interfaces, but humans do. <em>Interfaces are for humans</em>.</p>
+  </li>
+  <li>
+    <p>Interfaces are read many times more than are written. The weaker an interface is, the more diffcult it is to understand its intention. <em>Respect other humans</em>.</p>
+  </li>
+  <li>
+    <p>Various tools, patterns and techniques may be utilised to create interface, but only human can blend it together with appropriate proportions. <em>That is a good interface</em>.</p>
+  </li>
+  <li>
+    <p>Interface designer doesn’t start on 09:00 am and stops 05:00 pm. Creative work is not a machine with on/off button. When the conditions are good, good interface will appear in 2 hours. When conditions are bad, 2 days may be insufficient to create a good one. Don’t push on it.</p>
+  </li>
+  <li>
+    <p>Creating interfaces, despite its science nature, is an art. Therefore may be described as beautiful or awful, good or bad, strong or weak or whatever adjective is suitable. Judging interfaces requires both, wisdom and experience.</p>
+  </li>
+  <li>
+    <p>SOLID, TDD, DRY, CLEAN: they exist for a reason. <em>Mantaining good interfaces is a pleasure</em>. Otherwise there’s always WTF.</p>
+  </li>
+</ol>
+
+</article>
+
+<aside class="related">
+  <h2>Related Posts</h2>
+  <ul class="related-posts">
+    
+    <li>
+      <h3>
+        <a href="/2023/01/29/Exploring-the-Overlays-Capture-Architecture/">
+          Exploring the Overlays Capture Architecture: Managing Data Captured from Temperature Sensors
+          <small><time datetime="2023-01-29T17:27:05+00:00">29 Jan 2023</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2022/11/21/mobile-app-content-accessibility/">
+          Mobile app content accessibility
+          <small><time datetime="2022-11-21T17:27:05+00:00">21 Nov 2022</time></small>
+        </a>
+      </h3>
+    </li>
+    
+    <li>
+      <h3>
+        <a href="/2022/09/26/flutter-and-rust-combined-creating-a-plugin-to-support-various-operating-systems/">
+          Flutter and Rust combined. Creating a plugin to support various operating systems
+          <small><time datetime="2022-09-26T17:27:05+00:00">26 Sep 2022</time></small>
+        </a>
+      </h3>
+    </li>
+    
+  </ul>
+</aside>
+
+
+
+<!-- Add Disqus comments. -->
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'opensoftwareblog';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+      </main>
+
+      <footer class="footer">
+        <small>
+          ArgonAUTHs <time datetime="2023-01-29T22:03:57+00:00">2023</time>. EUPL 1.2.
+        </small>
+      </footer>
+    </div>
+    <script>
+      var show = function (elem) {
+        elem.classList.add('is-visible');
+      };
+
+      // Hide an element
+      var hide = function (elem) {
+        elem.classList.remove('is-visible');
+      };
+
+      // Toggle element visibility
+      var toggle = function (elem) {
+        elem.classList.toggle('is-visible');
+      };
+
+      document.querySelector("#nav-toggle").addEventListener("click", function(event) {
+        var content = document.querySelector(".pull");
+        if (!content) return;
+
+        toggle(content);
+      });
+
+    </script>
+  </body>
+</html>
